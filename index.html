@@ -1,0 +1,1681 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>niadaily</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Obviously, BDO Grotesk and Denton are used when installed; Archivo (wide), Hanken Grotesk and Fraunces stand in otherwise. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap">
+<style>
+/* niadaily: a phone app. One narrow column, a sticky top bar, screens switched by a fixed bottom tab bar, and bottom sheets.
+   Spacing system: every margin, padding, gap and size comes from the 4px scale below (4, 8, 12, 16, 24, 32, 48, 64).
+   Tight spacing (4 to 8) inside a group, like a title and its subtitle. Wide spacing (24 to 32) between separate blocks.
+   The brand is cream-first: one deliberate light look in every viewer theme. */
+:root{
+  --cream:#F6E8D1; --black:#1F1E1C; --lime:#DDEB9D;
+  --olive:#3D402F; --oxblood:#49111C; --rust:#912601; --rust-2:#741E00;
+  --frame:#E8D5B4;
+  --bg:var(--cream); --surface:#FBF3E5; --surface-2:#EEDDC0; --ink:var(--black); --muted:#6A5F50; --line:#E2D0B0; --line-strong:#C9B28C;
+  --flag:#912601; --flag-soft:#F2D2C2; --warn:#7A4E05; --warn-soft:#F0DDB0; --good:#47541F; --good-soft:#E0E4BF;
+  --chart-a:#3D402F; --chart-b:#912601;
+  --on-dark:rgba(246,232,209,.8); --on-dark-line:rgba(246,232,209,.2); --on-dark-fill:rgba(246,232,209,.12);
+  --display:"Obviously","Obviously Wide","Archivo",system-ui,sans-serif;
+  --body:"BDO Grotesk","Hanken Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --serif:"Denton","Fraunces",Georgia,serif;
+  /* the 4px scale */
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s6:24px; --s8:32px; --s12:48px; --s16:64px;
+  --r-sm:8px; --r:16px; --r-lg:24px; --pill:999px;
+  --app-w:480px; --top-h:64px; --nav-h:64px;
+  --gl:max(24px,env(safe-area-inset-left,0px)); --gr:max(24px,env(safe-area-inset-right,0px));
+}
+
+/* ---------- Base ---------- */
+*{box-sizing:border-box}
+body{background:var(--frame);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:40;background:var(--bg)}
+h1,h2,h3,p{margin:0}
+h1,h2{font-family:var(--display);font-weight:800;text-wrap:balance}
+h1{font-size:2rem;font-stretch:125%;letter-spacing:-.035em;line-height:1.05}
+h2{font-size:1.25rem;font-stretch:115%;letter-spacing:-.02em;line-height:1.2}
+h3{font-family:var(--body);font-weight:700;font-size:1rem;line-height:1.5}
+img{display:block;max-width:100%;height:auto}
+button{font:inherit;cursor:pointer;color:inherit}
+:focus-visible{outline:2px solid currentColor;outline-offset:4px;border-radius:var(--r-sm)}
+.num{font-variant-numeric:tabular-nums}
+.label{font-size:.75rem;line-height:1.33;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:var(--muted)}
+.muted{color:var(--muted)}
+.small{font-size:.875rem;line-height:1.5}
+.xs{font-size:.75rem;line-height:1.33}
+.sub{font-family:var(--serif);font-size:1.125rem;line-height:1.45;color:var(--muted)}
+[tabindex="-1"]:focus{outline:none}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.center{text-align:center}
+
+/* ---------- Layout primitives ---------- */
+.screen{display:grid;gap:var(--s8);padding-top:var(--s6);padding-left:var(--gl);padding-right:var(--gr);align-content:start}
+.stack{display:grid;gap:var(--s8);min-width:0}
+.block{display:grid;gap:var(--s4);min-width:0}
+.head{display:grid;gap:var(--s2);min-width:0}
+.tt{display:grid;gap:var(--s1);min-width:0}
+.list{display:grid;gap:var(--s3)}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s2)}
+.sec-head{display:flex;justify-content:space-between;align-items:baseline;gap:var(--s3)}
+.count{font-size:.875rem;font-weight:600;color:var(--muted)}
+.count.all{color:var(--good)}
+
+/* ---------- App shell ---------- */
+.app{max-width:var(--app-w);margin:0 auto;background:var(--bg);min-height:100vh;padding-bottom:calc(var(--nav-h) + env(safe-area-inset-bottom,0px) + var(--s12));box-shadow:0 0 0 1px var(--line),0 24px 64px rgba(31,30,28,.12)}
+.topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);border-bottom:1px solid var(--line)}
+.topbar .in{display:flex;justify-content:space-between;align-items:center;gap:var(--s3);height:var(--top-h);padding-left:var(--gl);padding-right:var(--gr)}
+.logo{display:flex;align-items:center;gap:var(--s2);background:none;border:0;padding:0;color:var(--ink);font-family:var(--display);font-weight:800;font-stretch:125%;letter-spacing:-.04em;font-size:1.25rem;line-height:1}
+/* Wordmark: "nia" in a heavy serif, "daily" in a light grotesk, set like the niahealth lockup */
+.wm{display:inline-flex;align-items:baseline;font-size:1.5rem;line-height:1;letter-spacing:-.02em;color:var(--ink)}
+.wm b{font-family:var(--serif);font-weight:900;font-variation-settings:"opsz" 72,"SOFT" 0,"WONK" 0;letter-spacing:-.03em}
+.wm{font-family:var(--body);font-weight:400;font-stretch:100%}
+.top-r{display:flex;align-items:center;gap:var(--s3)}
+.concept-pill{border:0;background:var(--lime);color:var(--black);border-radius:var(--pill);padding:var(--s1) var(--s3);height:32px;font-size:.75rem;font-weight:700}
+.me-btn{width:32px;height:32px;border-radius:50%;border:0;padding:0;overflow:hidden;background:var(--surface-2);box-shadow:0 0 0 2px var(--bg),0 0 0 4px transparent}
+.me-btn[aria-current="page"]{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--ink)}
+.me-btn img{width:100%;height:100%;object-fit:cover;object-position:50% 20%}
+
+/* ---------- Bottom tab bar ---------- */
+.tabbar{position:fixed;z-index:30;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:var(--app-w);background:var(--bg);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:var(--gl);padding-right:var(--gr)}
+.tabbar button{position:relative;display:grid;justify-items:center;align-content:center;gap:var(--s1);height:var(--nav-h);background:none;border:0;padding:0;color:var(--muted);font-size:.75rem;line-height:1.33;font-weight:600}
+.tabbar button[aria-current="page"]{color:var(--ink)}
+.tabbar .ico{position:relative;display:block;width:24px;height:24px}
+.tabbar svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.tabbar button[aria-current="page"] svg .f{fill:currentColor}
+.tabbar button[aria-current="page"] svg .m{stroke:var(--bg)}
+.badge{position:absolute;right:-4px;bottom:0;width:8px;height:8px;border-radius:50%;background:#E0261B;box-shadow:0 0 0 2px var(--bg)}
+
+/* ---------- Buttons ---------- */
+.pill{display:inline-flex;align-items:center;justify-content:center;gap:var(--s2);border:0;border-radius:var(--pill);padding:0 var(--s6);height:48px;font-weight:600;font-size:1rem;background:var(--black);color:var(--cream);white-space:nowrap}
+.pill.sm{padding:0 var(--s4);height:40px;font-size:.875rem}
+.pill.cream{background:var(--cream);color:var(--black)}
+.pill.ghost{background:transparent;color:inherit;box-shadow:inset 0 0 0 2px currentColor}
+.pill.block{width:100%}
+.pill:disabled{opacity:.45;cursor:default}
+.pill svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:round}
+.chipbtn{border:2px solid var(--line-strong);background:transparent;border-radius:var(--pill);padding:0 var(--s4);height:40px;font-weight:600;font-size:.875rem}
+.chipbtn[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chipbtn.ghost{border-color:transparent;text-decoration:underline;text-underline-offset:4px;color:var(--muted);padding:0 var(--s2)}
+.linkbtn{background:none;border:0;padding:var(--s3);justify-self:center;color:var(--muted);font-weight:600;text-decoration:underline;text-underline-offset:4px}
+
+/* ---------- Cards and chips ---------- */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:var(--s6);display:grid;gap:var(--s4);align-content:start;min-width:0}
+.card.olive,.card.oxblood,.card.rust{border-color:transparent;color:var(--cream);--ink:var(--cream);--muted:var(--on-dark);--line:var(--on-dark-line);--line-strong:rgba(246,232,209,.4);--surface:var(--on-dark-fill);--surface-2:rgba(246,232,209,.16);--bg:var(--on-dark-fill)}
+.card.olive{background:var(--olive)}
+.card.oxblood{background:var(--oxblood)}
+.card.rust{background:var(--rust)}
+.card.lime{background:var(--lime);border-color:transparent;color:var(--black)}
+.chip{display:inline-flex;align-items:center;gap:var(--s2);font-size:.75rem;line-height:1.33;font-weight:700;border-radius:var(--pill);padding:var(--s1) var(--s3);background:var(--surface-2);color:var(--ink);white-space:nowrap}
+.card.olive .chip,.card.oxblood .chip,.card.rust .chip,.sheet .chip{background:var(--on-dark-fill);color:var(--cream)}
+.chip.lime,.card.olive .chip.lime{background:var(--lime);color:var(--black)}
+.chip.flag{background:var(--flag-soft);color:var(--flag)}
+.chip.warn{background:var(--warn-soft);color:var(--warn)}
+.chip.good{background:var(--good-soft);color:var(--good)}
+.chip.plain{background:var(--surface-2);color:var(--muted)}
+.chip svg{width:12px;height:12px}
+.dot{width:8px;height:8px;border-radius:50%;background:currentColor}
+.notice{font-size:.875rem;padding:var(--s4);border-radius:var(--r);background:var(--surface-2);color:var(--muted)}
+.notice.err{background:var(--flag-soft);color:var(--flag)}
+.guard{font-size:.875rem;color:var(--muted)}
+.grade{display:grid;place-items:center;width:56px;height:56px;border-radius:50%;background:var(--cream);color:var(--olive);font-family:var(--display);font-weight:800;font-stretch:125%;font-size:1.25rem;letter-spacing:-.04em;line-height:1;flex:none}
+.grade.lg{width:80px;height:80px;font-size:2rem}
+
+/* Row button: icon, text, status */
+.row-card{display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:var(--s4);align-items:center;width:100%;text-align:left;border:0;border-radius:var(--r);padding:var(--s4);color:var(--cream)}
+.row-card.oxblood{background:var(--oxblood)}
+.row-card.rust{background:var(--rust)}
+.row-card.olive{background:var(--olive)}
+.row-card.plain{background:var(--surface);color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
+.row-card .ic{width:48px;height:48px;border-radius:50%;background:var(--on-dark-fill);display:grid;place-items:center}
+.row-card.plain .ic{background:var(--surface-2)}
+.row-card .ic svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.row-card b{display:block;font-size:1rem;line-height:1.5}
+.row-card small{display:block;font-size:.875rem;line-height:1.43;color:var(--on-dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row-card.plain small{color:var(--muted)}
+.row-card .st{font-size:.75rem;line-height:1.33;font-weight:700;background:var(--on-dark-fill);border-radius:var(--pill);padding:var(--s1) var(--s3);white-space:nowrap}
+.row-card.plain .st{background:var(--surface-2)}
+.row-card .st.done{background:var(--lime);color:var(--black)}
+
+/* ---------- Home ---------- */
+.ai-card .tip{font-family:var(--serif);font-size:1.25rem;line-height:1.4;white-space:pre-wrap}
+.ai-card .top{display:flex;justify-content:space-between;align-items:center;gap:var(--s3);flex-wrap:wrap}
+.sync{display:inline-flex;align-items:center;gap:var(--s2);font-size:.75rem;line-height:1.33;font-weight:600;color:var(--muted);background:none;border:0;padding:0}
+.sync svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.sync .live{width:8px;height:8px;border-radius:50%;background:var(--good)}
+.metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s3)}
+.metric{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:var(--s4);display:grid;gap:var(--s2);align-content:start;min-width:0}
+.metric .k{display:flex;align-items:center;gap:var(--s2);font-size:.75rem;line-height:1.33;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.metric .k svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.metric .v{font-family:var(--display);font-weight:800;font-stretch:120%;font-size:1.5rem;letter-spacing:-.04em;line-height:1}
+.metric .v small{font-family:var(--body);font-size:.875rem;font-weight:600;letter-spacing:0;color:var(--muted)}
+.metric .s{font-size:.75rem;line-height:1.33;color:var(--muted)}
+.metrics .span2{grid-column:1/-1}
+.meter{height:8px;border-radius:4px;background:var(--surface-2);overflow:hidden}
+.meter i{display:block;height:100%;border-radius:4px;background:var(--olive)}
+
+.act{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:var(--s3);display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:var(--s1) var(--s4);align-items:center;transition:background .2s}
+.act.is-done{background:color-mix(in srgb,var(--good-soft) 60%,var(--surface))}
+.act .thumb{width:64px;height:64px;border-radius:var(--r-sm);object-fit:cover}
+.act-main{display:grid;gap:var(--s1);min-width:0}
+.tag{font-size:.75rem;line-height:1.33;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.act h3{line-height:1.33}
+.act.is-done h3{text-decoration:line-through;text-decoration-color:rgba(31,30,28,.35)}
+.state{font-size:.75rem;line-height:1.33;font-weight:700;color:var(--good)}
+.state.skip{color:var(--muted)}
+.more{justify-self:start;background:none;border:0;padding:0;color:var(--muted);font-size:.75rem;line-height:1.33;font-weight:600;text-decoration:underline;text-underline-offset:4px}
+.check{width:48px;height:48px;border-radius:50%;border:2px solid var(--line-strong);background:var(--bg);display:grid;place-items:center;color:var(--line-strong);transition:background .15s,color .15s,border-color .15s}
+.check svg{width:24px;height:24px}
+.check:hover{border-color:var(--olive);color:var(--olive)}
+.check[aria-pressed="true"]{background:var(--olive);border-color:var(--olive);color:var(--cream)}
+.act-more{grid-column:1/-1;display:grid;gap:var(--s3);margin-top:var(--s3);padding:var(--s4) var(--s1) var(--s1);border-top:1px solid var(--line);font-size:.875rem}
+.reason{display:flex;gap:var(--s2);align-items:flex-start;color:var(--muted)}
+.reason svg{flex:none;margin-top:4px}
+
+/* ---------- Bottom sheets ---------- */
+dialog.sheet{border:0;padding:0;margin:auto auto 0;width:100%;max-width:var(--app-w);max-height:90vh;border-radius:var(--r-lg) var(--r-lg) 0 0;color:var(--cream);overflow:auto;overscroll-behavior:contain;
+  --ink:var(--cream);--muted:var(--on-dark);--line:var(--on-dark-line)}
+dialog.sheet[open]{animation:up .28s cubic-bezier(.2,.8,.2,1)}
+@keyframes up{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
+dialog.sheet::backdrop{background:rgba(31,30,28,.5)}
+dialog.sheet.oxblood{background:var(--oxblood)}
+dialog.sheet.rust{background:var(--rust)}
+dialog.sheet.olive{background:var(--olive)}
+.sheet .in{display:grid;gap:var(--s6);padding-top:var(--s3);padding-bottom:calc(var(--s8) + env(safe-area-inset-bottom,0px));padding-left:var(--gl);padding-right:var(--gr)}
+.grab{width:40px;height:4px;border-radius:2px;background:rgba(246,232,209,.35);justify-self:center}
+.sheet-head{display:flex;justify-content:space-between;align-items:flex-start;gap:var(--s4)}
+.xbtn{flex:none;width:40px;height:40px;border-radius:50%;border:0;background:var(--on-dark-fill);display:grid;place-items:center;font-size:1.25rem;line-height:1}
+.field{background:rgba(31,30,28,.18);border-radius:var(--r);padding:var(--s4);display:grid;gap:var(--s3)}
+.field .top{display:flex;justify-content:space-between;align-items:baseline;gap:var(--s3)}
+.field label,.field .flabel{font-weight:600}
+.field output{font-family:var(--display);font-weight:800;font-stretch:125%;letter-spacing:-.03em;font-size:1.5rem;line-height:1;white-space:nowrap}
+.hints{display:flex;justify-content:space-between;font-size:.75rem;line-height:1.33;color:var(--muted)}
+.synced{display:grid;grid-template-columns:40px minmax(0,1fr);gap:var(--s3);align-items:center;background:rgba(31,30,28,.18);border-radius:var(--r);padding:var(--s4)}
+.synced .ic{width:40px;height:40px;border-radius:50%;background:var(--lime);color:var(--black);display:grid;place-items:center}
+.synced svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:32px;background:transparent;margin:0;--p:50%}
+input[type=range]::-webkit-slider-runnable-track{height:8px;border-radius:4px;background:linear-gradient(90deg,var(--cream) var(--p),rgba(246,232,209,.22) var(--p))}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:var(--cream);margin-top:-8px;box-shadow:0 2px 8px rgba(0,0,0,.35)}
+input[type=range]::-moz-range-track{height:8px;border-radius:4px;background:rgba(246,232,209,.22)}
+input[type=range]::-moz-range-progress{height:8px;border-radius:4px;background:var(--cream)}
+input[type=range]::-moz-range-thumb{width:24px;height:24px;border:0;border-radius:50%;background:var(--cream)}
+.seg{display:flex;gap:var(--s2)}
+.seg button{flex:1;min-width:0;height:48px;border-radius:var(--pill);border:2px solid rgba(246,232,209,.4);background:transparent;font-weight:700}
+.seg button[aria-pressed="true"]{background:var(--cream);color:var(--oxblood);border-color:var(--cream)}
+.lesson{display:grid;gap:var(--s4)}
+.lesson-title{font-family:var(--serif);font-weight:400;font-size:2rem;line-height:1.15;letter-spacing:-.01em}
+.lesson-body{color:var(--muted);font-size:1rem}
+.quiz{background:var(--rust-2);border-radius:var(--r);padding:var(--s6);display:grid;gap:var(--s3)}
+.quiz .label{color:var(--on-dark)}
+.quiz .q{font-weight:700;font-size:1.125rem;line-height:1.33}
+.qopt{display:flex;justify-content:space-between;align-items:center;gap:var(--s3);text-align:left;border:2px solid rgba(246,232,209,.4);background:transparent;border-radius:var(--r-sm);padding:0 var(--s4);min-height:48px;font-weight:600}
+.qopt:disabled{cursor:default}
+.qopt.right{background:var(--cream);color:var(--rust);border-color:var(--cream)}
+.qopt.wrong{background:rgba(31,30,28,.25);border-color:transparent;color:var(--muted)}
+.qfeedback{min-height:24px}
+.devlist{display:grid;gap:var(--s2)}
+.dev{display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:var(--s4);align-items:center;background:rgba(31,30,28,.18);border-radius:var(--r);padding:var(--s3) var(--s4)}
+.dev .ic{width:48px;height:48px;border-radius:50%;background:var(--on-dark-fill);display:grid;place-items:center}
+.dev .ic svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.dev small{display:block;color:var(--muted);font-size:.75rem;line-height:1.33}
+.dev .chipbtn{border-color:rgba(246,232,209,.4)}
+.dev .chipbtn[aria-pressed="true"]{background:var(--lime);color:var(--black);border-color:var(--lime)}
+.covers{list-style:none;margin:0;padding:0;display:grid;gap:var(--s2)}
+.covers li{display:grid;grid-template-columns:32px minmax(0,1fr);gap:var(--s3);align-items:center;background:rgba(31,30,28,.18);border-radius:var(--r);padding:var(--s3) var(--s4)}
+.covers .tick{width:32px;height:32px;border-radius:50%;background:var(--lime);color:var(--black);display:grid;place-items:center}
+.covers .tick svg{width:16px;height:16px}
+.covers small{display:block;color:var(--muted);font-size:.75rem;line-height:1.33}
+.perks{display:grid;gap:var(--s4)}
+.perk{display:grid;grid-template-columns:64px minmax(0,1fr);gap:var(--s4);align-items:center}
+.perk img{width:64px;height:64px;border-radius:var(--r-sm);object-fit:cover}
+
+/* ---------- Progress ---------- */
+.grade-card{grid-template-columns:auto minmax(0,1fr);align-items:center;gap:var(--s6)}
+.grade-card .v{font-family:var(--display);font-weight:800;font-stretch:125%;letter-spacing:-.03em;font-size:1.25rem;line-height:1.2}
+.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s3)}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:var(--s4);display:grid;gap:var(--s2);align-content:start}
+.stat .top{display:flex;justify-content:space-between;align-items:center;gap:var(--s2)}
+.stat .v{font-family:var(--display);font-weight:800;font-stretch:120%;font-size:1.5rem;letter-spacing:-.04em;line-height:1}
+.stat .g{display:grid;place-items:center;min-width:32px;height:24px;padding:0 var(--s2);border-radius:var(--pill);background:var(--surface-2);font-family:var(--display);font-weight:800;font-stretch:115%;font-size:.75rem}
+.stat small{font-size:.75rem;line-height:1.33;color:var(--muted)}
+.heat-wrap{display:grid;gap:var(--s2)}
+.heat,.dow{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:var(--s2)}
+.heat .c{aspect-ratio:1;border-radius:var(--r-sm);background:var(--surface-2)}
+.heat .c.blank{visibility:hidden}
+.heat .c[data-l="1"]{background:color-mix(in srgb,var(--chart-a) 30%,var(--surface-2))}
+.heat .c[data-l="2"]{background:color-mix(in srgb,var(--chart-a) 62%,var(--surface-2))}
+.heat .c[data-l="3"]{background:var(--chart-a)}
+.heat .c.today{outline:2px solid var(--chart-b);outline-offset:2px}
+.dow{font-size:.75rem;line-height:1.33;color:var(--muted);text-align:center;font-weight:600}
+.legend{display:flex;gap:var(--s2);align-items:center;flex-wrap:wrap;font-size:.75rem;line-height:1.33;color:var(--muted)}
+.legend .c{width:12px;height:12px;border-radius:4px;display:inline-block}
+.legend .gap{width:var(--s2)}
+.lv1{background:color-mix(in srgb,var(--chart-a) 30%,var(--surface-2))} .lv2{background:color-mix(in srgb,var(--chart-a) 62%,var(--surface-2))} .lv0{background:var(--surface-2)} .lv3,.ca{background:var(--chart-a)} .cb{background:var(--chart-b)}
+.chart{width:100%;height:auto;display:block}
+.insights{display:grid;gap:var(--s3)}
+.insight{display:grid;gap:var(--s1);padding:var(--s4);border-radius:var(--r);background:var(--bg);border:1px solid var(--line)}
+.insight b{font-family:var(--display);font-weight:800;font-stretch:112%;letter-spacing:-.02em}
+.insight p{font-size:.875rem}
+.bars{display:grid;gap:var(--s4)}
+.barrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:var(--s2) var(--s3);align-items:center;font-size:.875rem}
+.bartrack{grid-column:1/-1;height:8px;border-radius:4px;background:var(--surface-2);overflow:hidden}
+.barfill{height:100%;background:var(--chart-a);border-radius:4px}
+.barfill.low{background:var(--chart-b)}
+.barval{display:flex;align-items:center;gap:var(--s2);font-variant-numeric:tabular-nums}
+.barval b{font-family:var(--display);font-weight:800;font-stretch:115%}
+
+/* ---------- Results ---------- */
+.mrows{display:grid}
+.mrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:var(--s1) var(--s3);align-items:center;padding:var(--s4) 0;border-bottom:1px solid var(--line)}
+.mrows > .mrow:first-child,.mrows > .mrow-d:first-child summary{padding-top:0}
+.mrows > .mrow:last-child{border-bottom:0;padding-bottom:0}
+.mrow .nm{font-weight:700}
+.mrow .val{text-align:right;font-variant-numeric:tabular-nums}
+.mrow .val strong{font-family:var(--display);font-weight:800;font-stretch:112%;font-size:1.125rem}
+.mrow .rg{font-size:.75rem;line-height:1.33;color:var(--muted)}
+.mrow .chip{justify-self:end}
+.mrow-d{border-bottom:1px solid var(--line)}
+.mrow-d:last-child{border-bottom:0}
+.mrow-d summary{list-style:none;cursor:pointer;border-bottom:0}
+.mrow-d summary::-webkit-details-marker{display:none}
+.mrow-d:last-child:not([open]) summary{padding-bottom:0}
+.mrow-d .ex{font-size:.875rem;color:var(--muted);padding-bottom:var(--s4)}
+.mrow-d:last-child .ex{padding-bottom:0}
+.target-badge{display:inline-block;margin-left:var(--s2);vertical-align:2px;font-size:.625rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;background:var(--rust);color:var(--cream);border-radius:var(--pill);padding:0 var(--s2);line-height:20px}
+.inputs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s3)}
+.inputs > div{display:grid;gap:var(--s2)}
+.checker input,.checker select{width:100%;border:2px solid rgba(246,232,209,.3);border-radius:var(--r-sm);padding:0 var(--s3);background:var(--on-dark-fill);color:var(--cream);font:inherit;font-weight:600;height:48px}
+.checker select option{color:var(--black);background:var(--cream)}
+.verdict{display:grid;gap:var(--s2);border-radius:var(--r);padding:var(--s4);background:var(--on-dark-fill);--track:rgba(246,232,209,.2);--zone:rgba(246,232,209,.4);--markc:var(--cream)}
+.verdict h3{font-family:var(--display);font-weight:800;font-stretch:115%;letter-spacing:-.02em;font-size:1.125rem}
+.verdict p{font-size:.875rem}
+.verdict.good{background:var(--lime);color:var(--black);--muted:rgba(31,30,28,.72);--track:rgba(31,30,28,.14);--zone:rgba(31,30,28,.22);--markc:var(--black)}
+.verdict.bad{background:var(--rust)}
+.scale{position:relative;height:40px}
+.scale .track{position:absolute;left:0;right:0;top:16px;height:8px;border-radius:4px;background:var(--track)}
+.scale .zone{position:absolute;top:16px;height:8px;background:var(--zone)}
+.scale .mark{position:absolute;top:8px;width:4px;height:24px;background:var(--markc);border-radius:2px}
+.scale .zero{position:absolute;top:12px;width:1px;height:16px;background:var(--muted)}
+.scale-legend{display:flex;justify-content:space-between;gap:var(--s2);font-size:.75rem;line-height:1.33;color:var(--muted)}
+
+/* ---------- Coach ---------- */
+.chat{display:grid;gap:var(--s3);align-content:start}
+.msg{max-width:85%;padding:var(--s3) var(--s4);border-radius:var(--r-lg);white-space:pre-wrap;min-width:0;overflow-wrap:anywhere}
+.msg.me{justify-self:end;background:var(--black);color:var(--cream);border-bottom-right-radius:var(--s1)}
+.msg.ai{justify-self:start;background:var(--surface-2);border-bottom-left-radius:var(--s1)}
+.suggest{display:flex;flex-wrap:wrap;gap:var(--s2)}
+.suggest button{border:2px solid var(--line-strong);background:transparent;border-radius:var(--pill);padding:var(--s2) var(--s4);font-size:.875rem;font-weight:500;text-align:left}
+.composer{position:sticky;bottom:calc(var(--nav-h) + env(safe-area-inset-bottom,0px) + var(--s2));display:flex;gap:var(--s2);align-items:flex-end;background:var(--bg);padding:var(--s2) 0;z-index:5}
+.composer textarea{flex:1;min-width:0;resize:none;min-height:48px;max-height:144px;border:2px solid var(--line-strong);border-radius:var(--r-lg);padding:var(--s3) var(--s4);background:var(--surface);color:var(--ink);font:inherit}
+.composer textarea:focus{outline:none;border-color:var(--ink)}
+details.see summary{cursor:pointer;font-weight:600;list-style:none;display:flex;justify-content:space-between;align-items:center}
+details.see summary::-webkit-details-marker{display:none}
+details.see summary::after{content:"+";font-size:1.25rem;line-height:1}
+details.see[open] summary::after{content:"−"}
+
+/* ---------- Me ---------- */
+.profile{display:flex;align-items:center;gap:var(--s4)}
+.profile img{width:80px;height:80px;border-radius:50%;object-fit:cover;object-position:50% 20%;flex:none}
+.targets{display:flex;flex-wrap:wrap;gap:var(--s2)}
+.target{display:inline-flex;align-items:center;gap:var(--s2);border:1px solid var(--line);border-radius:var(--pill);padding:var(--s1) var(--s3) var(--s1) var(--s1);font-size:.875rem;background:var(--bg)}
+.target .sw{width:16px;height:16px;border-radius:50%}
+.sw.olive{background:var(--olive)} .sw.rust{background:var(--rust)}
+.faq{gap:0}
+.faq h2{padding-bottom:var(--s3)}
+.faq details{border-top:1px solid var(--line)}
+.faq details:last-of-type{border-bottom:1px solid var(--line)}
+.faq summary{list-style:none;display:flex;justify-content:space-between;align-items:center;gap:var(--s4);padding:var(--s4) 0;font-weight:600;cursor:pointer}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary .plus{position:relative;width:24px;height:24px;flex:none;border:2px solid var(--line);border-radius:50%}
+.faq summary .plus::before,.faq summary .plus::after{content:"";position:absolute;left:50%;top:50%;width:8px;height:2px;background:currentColor;transform:translate(-50%,-50%)}
+.faq summary .plus::after{transform:translate(-50%,-50%) rotate(90deg)}
+.faq details[open] summary .plus::after{opacity:0}
+.faq details p{padding-bottom:var(--s4);color:var(--muted);font-size:.875rem}
+.credit{font-size:.75rem;color:var(--muted);text-align:center}
+
+/* ---------- Welcome (first open) ---------- */
+.welcome{position:fixed;inset:0;z-index:60;background:var(--frame);overflow:auto;overscroll-behavior:contain}
+.welcome .w{max-width:var(--app-w);margin:0 auto;min-height:100%;background:var(--bg);display:grid;align-content:start;gap:var(--s8);padding-top:calc(var(--s4) + env(safe-area-inset-top,0px));padding-bottom:calc(var(--s8) + env(safe-area-inset-bottom,0px));padding-left:var(--gl);padding-right:var(--gr)}
+.welcome .wtop{display:flex;justify-content:space-between;align-items:center;gap:var(--s3);height:48px}
+.welcome .hero{position:relative;border-radius:var(--r);overflow:hidden;max-width:100%}
+.welcome .hero img{width:100%;aspect-ratio:4/3;object-fit:cover;object-position:50% 35%}
+.welcome .hero .chip{position:absolute;left:var(--s4);top:var(--s4)}
+.welcome .hero .float{position:absolute;left:var(--s4);right:var(--s4);bottom:var(--s4);display:flex;gap:var(--s2);flex-wrap:wrap}
+.welcome .hero .float span{display:inline-flex;align-items:center;gap:var(--s2);background:rgba(31,30,28,.72);color:var(--cream);border-radius:var(--pill);padding:var(--s1) var(--s3);font-size:.75rem;line-height:1.33;font-weight:700;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.steps3{display:grid;gap:var(--s2)}
+.step{display:grid;grid-template-columns:40px minmax(0,1fr);gap:var(--s4);align-items:center;border-radius:var(--r);padding:var(--s4);color:var(--cream)}
+.step .n{width:40px;height:40px;border-radius:50%;background:var(--on-dark-fill);display:grid;place-items:center;font-family:var(--display);font-weight:800;font-stretch:115%}
+.step b{display:block;line-height:1.5}
+.step small{display:block;color:var(--on-dark);font-size:.875rem;line-height:1.43}
+.step.s1{background:var(--olive)} .step.s2{background:var(--oxblood)} .step.s3{background:var(--rust)}
+.cta{display:grid;gap:var(--s2)}
+
+/* ---------- Free check ---------- */
+.upload input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+label.pill{cursor:pointer;justify-self:start}
+.upload:focus-within label.pill{outline:2px solid var(--cream);outline-offset:4px}
+.busy{justify-items:center;text-align:center;padding:var(--s12) var(--s6)}
+.spin{width:56px;height:56px;border-radius:50%;border:4px solid var(--surface-2);border-top-color:var(--rust);animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.cov{grid-template-columns:auto minmax(0,1fr);align-items:center;gap:var(--s6)}
+.cov .grade{color:var(--oxblood)}
+.cov .v{font-family:var(--display);font-weight:800;font-stretch:125%;letter-spacing:-.03em;font-size:1.25rem;line-height:1.2}
+.miss{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--rust);border-radius:var(--r);padding:var(--s6);display:grid;gap:var(--s3);min-width:0}
+.miss .top{display:flex;justify-content:space-between;gap:var(--s3);align-items:center;flex-wrap:wrap}
+.miss h3{font-family:var(--display);font-weight:800;font-stretch:115%;font-size:1.25rem;letter-spacing:-.02em;line-height:1.2}
+.miss .chip{background:var(--flag-soft);color:var(--flag)}
+.miss.good-news{border-left-color:var(--olive)}
+.foryou{background:var(--lime);color:var(--black);border-radius:var(--r-sm);padding:var(--s3) var(--s4);font-size:.875rem}
+.miss details summary{cursor:pointer;color:var(--muted);font-size:.875rem;font-weight:600;text-decoration:underline;text-underline-offset:4px;list-style:none}
+.miss details summary::-webkit-details-marker{display:none}
+.miss details p{padding-top:var(--s2);font-size:.875rem;color:var(--muted)}
+.ai-out{font-family:var(--serif);font-size:1.125rem;line-height:1.45;white-space:pre-wrap}
+
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="app">
+  <header class="topbar">
+    <div class="in">
+      <button class="logo" type="button" data-tab="home" aria-label="niadaily, go to Home">
+        <span class="wm"><b>nia</b>daily</span>
+      </button>
+      <div class="top-r">
+        <button class="concept-pill" type="button" data-tab="me">Concept</button>
+        <button class="me-btn" type="button" data-tab="me" aria-label="Me, example member Maya"><img src="images/member.jpg" alt="" width="64" height="64"></button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+  <!-- ================= HOME ================= -->
+  <section class="screen" id="scr-home" aria-label="Home">
+    <div class="head">
+      <p class="label" id="todayLabel">Today</p>
+      <h1 id="greeting">Good morning, Maya</h1>
+    </div>
+
+    <article class="card olive ai-card" aria-labelledby="aiHead">
+      <div class="top">
+        <span class="chip lime"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1v4M8 11v4M1 8h4M11 8h4M3 3l2.5 2.5M10.5 10.5 13 13M13 3l-2.5 2.5M5.5 10.5 3 13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Your AI</span>
+        <span class="xs muted" id="aiHead">Knows your results, sleep and steps</span>
+      </div>
+      <p class="tip" id="tipText"></p>
+      <div class="row">
+        <button class="pill cream sm" id="tipBtn" type="button">Write a fresh note</button>
+        <button class="pill ghost sm" type="button" data-tab="coach">Ask anything</button>
+      </div>
+      <p class="xs muted" id="tipGuard" hidden></p>
+    </article>
+
+    <section class="block" aria-labelledby="todayHead">
+      <div class="sec-head">
+        <h2 id="todayHead">Today so far</h2>
+        <button class="sync" type="button" id="syncText"></button>
+      </div>
+      <div class="metrics" id="metrics"></div>
+    </section>
+
+    <section class="block" aria-labelledby="actHead">
+      <div class="sec-head"><h2 id="actHead">Today's actions</h2><span class="count" id="doneText" aria-live="polite">0 of 2 done</span></div>
+      <div class="list" id="actionList"></div>
+    </section>
+
+    <section class="block" aria-label="Daily check in and lesson">
+      <div class="list">
+        <button class="row-card oxblood" type="button" id="openCheckin">
+          <span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4h6M8 4H6a1 1 0 0 0-1 1v15a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1h-2"/><rect x="9" y="2.5" width="6" height="3" rx="1"/><path d="m9 13 2 2 4-4"/></svg></span>
+          <span class="tt"><b>Daily check in</b><small id="ciSum">Energy and fibre</small></span>
+          <span class="st" id="ciState">20 sec</span>
+        </button>
+        <button class="row-card rust" type="button" id="openLesson">
+          <span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5zM20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5a1.5 1.5 0 0 0 1.5-1.5z"/></svg></span>
+          <span class="tt"><b>2 minute lesson</b><small id="lsTitle">Today's lesson</small></span>
+          <span class="st" id="lsState">2 min</span>
+        </button>
+      </div>
+    </section>
+  </section>
+
+  <!-- ================= CHECK (free, works before someone joins) ================= -->
+  <section class="screen" id="scr-check" aria-label="Check your old results" hidden>
+    <div class="stack" id="ckStart">
+      <div class="head">
+        <span class="label">Free check · no account needed</span>
+        <h1>What your family doctor didn't test</h1>
+        <p class="sub">Add your last blood test. Your AI explains it in plain words and shows which key markers were never checked.</p>
+      </div>
+      <p class="notice err" id="ckError" role="alert" hidden></p>
+      <div class="block">
+        <div class="card olive upload">
+          <div class="tt">
+            <h2>Upload your report</h2>
+            <p class="small muted">A photo or PDF of results from LifeLabs, Dynacare or your family doctor's office.</p>
+          </div>
+          <label class="pill cream" for="ckFile"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5h3l1.5-2.5h7L17 7.5h3a1 1 0 0 1 1 1V19a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8.5a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/></svg>Choose photo or PDF</label>
+          <input type="file" id="ckFile" accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,.pdf">
+          <p class="xs muted" id="ckUpNote">Your AI reads the numbers from your photo. This concept doesn't keep the photo.</p>
+        </div>
+        <button class="row-card rust" type="button" id="ckSample">
+          <span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 3.5h8l4 4v13h-12z"/><path d="M14.5 3.5v4h4M9.5 12h6M9.5 15.5h6"/></svg></span>
+          <span class="tt"><b>Try a sample report</b><small>A typical yearly checkup</small></span>
+          <span class="st">Try it</span>
+        </button>
+      </div>
+      <div class="card">
+        <div class="tt">
+          <h2>What we look for</h2>
+          <p class="small muted">Six markers a standard checkup usually leaves out.</p>
+        </div>
+        <div class="targets" id="ckLookFor"></div>
+      </div>
+      <p class="guard">Not medical advice. Keep seeing your family doctor. This shows what else is worth asking about.</p>
+    </div>
+
+    <div class="card busy" id="ckBusy" hidden aria-live="polite">
+      <div class="spin" aria-hidden="true"></div>
+      <div class="tt">
+        <h2 id="ckBusyHead">Reading your report</h2>
+        <p class="small muted" id="ckBusyText">This usually takes 20 to 40 seconds.</p>
+      </div>
+      <button class="chipbtn" type="button" id="ckStop">Stop</button>
+    </div>
+
+    <div class="stack" id="ckResult" hidden></div>
+  </section>
+
+  <!-- ================= PROGRESS ================= -->
+  <section class="screen" id="scr-progress" aria-label="Progress" hidden>
+    <div class="head">
+      <h1>Progress</h1>
+    </div>
+    <div class="card olive grade-card">
+      <div class="grade lg" id="cycleGrade">B</div>
+      <div class="tt">
+        <span class="label">Cycle grade</span>
+        <div class="v" id="cycleGradeSub">86% of actions completed</div>
+        <span class="small muted" id="retestIn">Retest in 56 days</span>
+      </div>
+    </div>
+    <section class="block" aria-labelledby="weekHead">
+      <h2 id="weekHead">This week</h2>
+      <div class="stats" id="statTiles"></div>
+    </section>
+    <div class="card">
+      <div class="tt"><h2>Steps and sleep</h2><span class="xs muted">From your watch · last 28 days</span></div>
+      <div id="trendChart"></div>
+    </div>
+    <div class="card">
+      <div class="tt"><h2>Days completed</h2><span class="xs muted">Last 4 weeks</span></div>
+      <div class="heat-wrap">
+        <div class="dow" id="dowRow"></div>
+        <div class="heat" id="heatmap"></div>
+      </div>
+      <div class="legend">Less <span class="c lv0"></span><span class="c lv1"></span><span class="c lv2"></span><span class="c lv3"></span> More</div>
+    </div>
+    <div class="card">
+      <h2>Which actions stick</h2>
+      <div class="bars" id="actionBars"></div>
+      <p class="xs muted">Actions done less than half the time get swapped for an easier one. Actions done most days get a harder one.</p>
+    </div>
+    <div class="card olive">
+      <div class="sec-head"><h2>Your patterns</h2><span class="chip"><span class="dot"></span>Found by your AI</span></div>
+      <div class="insights" id="insights"></div>
+    </div>
+  </section>
+
+  <!-- ================= RESULTS ================= -->
+  <section class="screen" id="scr-results" aria-label="Results" hidden>
+    <div class="head">
+      <h1>Results</h1>
+      <p class="sub" id="drawDate">First blood test</p>
+    </div>
+    <div class="block">
+      <div class="card"><div class="mrows" id="resultRows"></div></div>
+      <p class="xs muted">Targets were chosen with the nurse practitioner at the first consult. Example values for a demo member.</p>
+    </div>
+    <div class="card oxblood checker">
+      <div class="tt">
+        <h2>Is the change real?</h2>
+        <p class="small muted">Results move a little from test to test even when nothing changes. Enter a retest value to see if the change is bigger than that.</p>
+      </div>
+      <div class="inputs">
+        <div><label class="label" for="ckMarker">Marker</label><select id="ckMarker"></select></div>
+        <div><label class="label" for="ckValue">Retest value</label><input id="ckValue" type="number" step="0.01" inputmode="decimal"></div>
+      </div>
+      <div class="verdict" id="verdict" aria-live="polite"></div>
+      <p class="xs muted">Uses the reference change value: 1.96 × √2 × √(analytical CV² + within person CV²). Variation figures are approximate, based on the EFLM Biological Variation Database.</p>
+    </div>
+    <button class="row-card olive" type="button" data-tab="check">
+      <span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="5.5"/><path d="m15 15 5 5"/></svg></span>
+      <span class="tt"><b>Old results from your doctor?</b><small>See what they didn't test</small></span>
+      <span class="st done">Free</span>
+    </button>
+  </section>
+
+  <!-- ================= COACH ================= -->
+  <section class="screen" id="scr-coach" aria-label="Coach" hidden>
+    <div class="head">
+      <h1>Your AI coach</h1>
+      <p class="sub">Knows your blood results, your watch data and your habits.</p>
+    </div>
+    <div class="block">
+      <div class="chat" id="chat" aria-live="polite"></div>
+      <div class="suggest" id="suggest" aria-label="Suggested questions"></div>
+      <form class="composer" id="composer">
+        <label for="ask" class="sr">Message</label>
+        <textarea id="ask" rows="1" placeholder="Ask your AI anything"></textarea>
+        <button class="pill" id="sendBtn" type="submit" aria-label="Send">Send</button>
+      </form>
+      <p class="guard" id="coachGuard">Your AI only suggests actions from a reviewed library. It doesn't diagnose or give medication advice, and it sends you to your nurse practitioner when something needs a clinician.</p>
+    </div>
+    <details class="card see">
+      <summary>What your AI can see</summary>
+      <div id="contextList" class="insights"></div>
+    </details>
+  </section>
+
+  <!-- ================= ME ================= -->
+  <section class="screen" id="scr-me" aria-label="Me" hidden>
+    <div class="profile">
+      <img src="images/member.jpg" alt="Example member Maya" width="160" height="160">
+      <div class="tt"><h1>Maya</h1><p class="muted">41 · example member</p></div>
+    </div>
+    <button class="row-card plain" type="button" id="openDevices">
+      <span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="6" width="11" height="12" rx="3"/><path d="M9 6l.6-3h4.8l.6 3M9 18l.6 3h4.8l.6-3M12 9.5V12l1.5 1"/></svg></span>
+      <span class="tt"><b>Phone and watch</b><small id="devSum">Apple Health connected</small></span>
+      <span class="st" id="devState">1 linked</span>
+    </button>
+    <div class="card">
+      <div class="tt">
+        <span class="label">Goal</span>
+        <p>More energy, and protecting her heart because heart disease runs in her family.</p>
+      </div>
+      <div class="tt">
+        <span class="label">Targets this cycle</span>
+        <div class="targets">
+          <span class="target"><span class="sw olive"></span><b>ApoB</b> 1.18 g/L</span>
+          <span class="target"><span class="sw rust"></span><b>HbA1c</b> 6.1%</span>
+        </div>
+      </div>
+    </div>
+    <div class="card lime">
+      <div class="tt">
+        <h2>About this concept</h2>
+        <p>niadaily is a concept by Leo Zhao: an everyday health app with an AI that knows your blood results and your daily habits. Example member, made up results and simulated watch data. Not medical advice.</p>
+      </div>
+      <button class="pill sm" id="resetDemo" type="button">Reset demo</button>
+    </div>
+    <div class="card olive faq">
+      <h2>Questions</h2>
+      <details><summary>How does the AI know my health?<span class="plus" aria-hidden="true"></span></summary><p>It reads your blood results, the steps, sleep and heart rate from your phone or watch, and your daily check ins. Every action it suggests comes from a reviewed library.</p></details>
+      <details><summary>Does it work with my watch?<span class="plus" aria-hidden="true"></span></summary><p>It's built to read Apple Health, Health Connect on Android, Fitbit, Garmin and Oura. In this concept the connection and the data are simulated.</p></details>
+      <details><summary>I already have a family doctor. Why would I need this?<span class="plus" aria-hidden="true"></span></summary><p>Keep your doctor. A yearly checkup is built to catch disease, so it usually skips markers like ApoB, Lp(a) and fasting insulin that show risk years earlier. The free Check tab shows what your last test left out.</p></details>
+      <details><summary>How do I know my progress is real?<span class="plus" aria-hidden="true"></span></summary><p>Only changes bigger than normal test to test variation count as improvement, so what you see isn't noise from the lab or a recent cold.</p></details>
+      <details><summary>Is this medical advice?<span class="plus" aria-hidden="true"></span></summary><p>No. Anything that needs a clinician goes to your nurse practitioner.</p></details>
+    </div>
+    <p class="credit">Photos from Unsplash</p>
+  </section>
+  </main>
+</div>
+
+<!-- Bottom tab bar -->
+<nav class="tabbar" aria-label="Main">
+  <button type="button" data-tab="home" aria-current="page"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="f" d="M3.5 10.2 12 3.5l8.5 6.7V19.5a1 1 0 0 1-1 1H15v-6.2H9v6.2H4.5a1 1 0 0 1-1-1z"/></svg></span>Home</button>
+  <button type="button" data-tab="progress"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect class="f" x="3.5" y="12" width="4" height="8.5" rx="1.5"/><rect class="f" x="10" y="7.5" width="4" height="13" rx="1.5"/><rect class="f" x="16.5" y="3.5" width="4" height="17" rx="1.5"/></svg></span>Progress</button>
+  <button type="button" data-tab="check"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect class="f" x="3.2" y="3.2" width="17.6" height="17.6" rx="5.5"/><circle class="m" cx="11.2" cy="11.2" r="3.7"/><path class="m" d="m14 14 2.9 2.9"/></svg></span>Check</button>
+  <button type="button" data-tab="results"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="f" d="M12 3.2s-6.3 6.8-6.3 11.3a6.3 6.3 0 0 0 12.6 0C18.3 10 12 3.2 12 3.2z"/></svg></span>Results</button>
+  <button type="button" data-tab="coach"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="f" d="M4.5 4.5h15a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-8l-5 4v-4h-2a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1z"/></svg><span class="badge" id="coachDot"></span></span>Coach</button>
+</nav>
+
+<!-- Welcome: what a new visitor sees first -->
+<div class="welcome" id="welcome" role="dialog" aria-modal="true" aria-labelledby="wHead" hidden>
+  <div class="w">
+    <div class="wtop">
+      <span class="logo" aria-label="niadaily"><span class="wm"><b>nia</b>daily</span></span>
+      <span class="concept-pill">Concept</span>
+    </div>
+    <div class="hero">
+      <img src="images/calm.jpg" alt="Person sitting cross legged in warm morning light" width="800" height="1000">
+      <span class="chip lime">Everyday health, powered by AI</span>
+      <div class="float" aria-hidden="true"><span>7 h 10 m sleep</span><span>8,240 steps</span><span>61 bpm resting</span></div>
+    </div>
+    <div class="head">
+      <h1 id="wHead">The AI that knows your health</h1>
+      <p class="sub">niadaily links your blood results with your phone and watch, then gives you two small actions a day.</p>
+    </div>
+    <div class="steps3">
+      <div class="step s1"><span class="n">1</span><span class="tt"><b>Connect your phone or watch</b><small>Steps, sleep and heart rate sync on their own</small></span></div>
+      <div class="step s2"><span class="n">2</span><span class="tt"><b>Add your blood results</b><small>Upload old ones, or test with us</small></span></div>
+      <div class="step s3"><span class="n">3</span><span class="tt"><b>Get your daily plan</b><small>From an AI coach that knows your numbers</small></span></div>
+    </div>
+    <div class="cta">
+      <button class="pill block" type="button" id="wStart">Get started</button>
+      <button class="linkbtn" type="button" id="wCheck">Or check your old results free</button>
+    </div>
+  </div>
+</div>
+
+<!-- Check in sheet -->
+<dialog class="sheet oxblood" id="sheetCheckin" aria-labelledby="ciHead">
+  <div class="in">
+    <span class="grab" aria-hidden="true"></span>
+    <div class="sheet-head"><div class="tt"><h2 id="ciHead" tabindex="-1" autofocus>How was yesterday?</h2><p class="small muted">Saves as you go. About 20 seconds.</p></div><button class="xbtn" type="button" data-close aria-label="Close">×</button></div>
+    <div class="synced" id="syncedNote">
+      <span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span>
+      <p class="small" id="syncedText">Sleep and steps came from your watch.</p>
+    </div>
+    <div class="block" id="manualFields">
+      <div class="field">
+        <div class="top"><label for="sleep">Sleep last night</label><output id="sleepOut" class="num" for="sleep"></output></div>
+        <input type="range" id="sleep" min="4" max="10" step="0.5">
+        <div class="hints"><span>4 h</span><span>10 h</span></div>
+      </div>
+      <div class="field">
+        <div class="top"><label for="steps">Steps yesterday</label><output id="stepsOut" class="num" for="steps"></output></div>
+        <input type="range" id="steps" min="0" max="16000" step="500">
+        <div class="hints"><span>0</span><span>16,000</span></div>
+      </div>
+    </div>
+    <div class="field">
+      <span class="flabel" id="energyLbl">Energy today</span>
+      <div class="seg" role="group" aria-labelledby="energyLbl" id="energy"></div>
+      <div class="hints"><span>Running on empty</span><span>Full tank</span></div>
+    </div>
+    <div class="field">
+      <span class="flabel" id="fibreLbl">Servings of beans, oats, barley or lentils yesterday</span>
+      <div class="seg" role="group" aria-labelledby="fibreLbl" id="fibre"></div>
+      <div class="hints"><span>None</span><span>4 or more</span></div>
+    </div>
+    <button class="pill cream block" type="button" id="saveCheckin">Done</button>
+  </div>
+</dialog>
+
+<!-- Devices sheet -->
+<dialog class="sheet olive" id="sheetDevices" aria-labelledby="devHead">
+  <div class="in">
+    <span class="grab" aria-hidden="true"></span>
+    <div class="sheet-head"><div class="tt"><h2 id="devHead" tabindex="-1" autofocus>Connect your phone or watch</h2><p class="small muted">niadaily reads steps, sleep, heart rate and active minutes, so you don't have to log them.</p></div><button class="xbtn" type="button" data-close aria-label="Close">×</button></div>
+    <div class="devlist" id="deviceList"></div>
+    <div class="cta">
+      <button class="pill cream block" type="button" data-close>Done</button>
+      <p class="xs muted center">Concept demo: connections and watch data are simulated.</p>
+    </div>
+  </div>
+</dialog>
+
+<!-- Membership sheet, from the free check -->
+<dialog class="sheet olive" id="sheetJoin" aria-labelledby="joinHead">
+  <div class="in">
+    <span class="grab" aria-hidden="true"></span>
+    <div class="sheet-head"><div class="tt"><span class="label">niadaily membership</span><h2 id="joinHead" tabindex="-1" autofocus>Your first panel covers these <span id="joinN">6</span></h2></div><button class="xbtn" type="button" data-close aria-label="Close">×</button></div>
+    <ul class="covers" id="joinList"></ul>
+    <div class="block">
+      <h3>What members get</h3>
+      <div class="perks">
+        <div class="perk"><img src="images/walk.jpg" alt="" width="128" height="128"><p class="tt"><b>Two small actions a day</b><span class="small muted">Picked from your results and your watch data.</span></p></div>
+        <div class="perk"><img src="images/friends.jpg" alt="" width="128" height="128"><p class="tt"><b>An AI coach that knows you</b><span class="small muted">Plus a nurse practitioner for anything medical.</span></p></div>
+        <div class="perk"><img src="images/move.jpg" alt="" width="128" height="128"><p class="tt"><b>A retest in 12 weeks</b><span class="small muted">It shows whether your numbers really moved.</span></p></div>
+      </div>
+    </div>
+    <div class="cta">
+      <button class="pill cream block" type="button" id="joinDemo">See niadaily in action</button>
+      <p class="xs muted center">Concept demo. Opens the app with example member Maya.</p>
+    </div>
+  </div>
+</dialog>
+
+<!-- Lesson sheet -->
+<dialog class="sheet rust" id="sheetLesson" aria-labelledby="lessonHead">
+  <div class="in">
+    <span class="grab" aria-hidden="true"></span>
+    <div class="sheet-head"><span class="chip" id="lessonChip">ApoB</span><button class="xbtn" type="button" data-close aria-label="Close">×</button></div>
+    <div id="lessonBody"></div>
+  </div>
+</dialog>
+
+<script>
+(function(){
+"use strict";
+/* ---------- Example member and libraries ---------- */
+const MEMBER = { name: "Maya", age: 41, sex: "female", goal: "More energy and protecting her heart, since heart disease runs in her family", prefers: "walking and cooking at home, dislikes running", schedule: "office job, 9 to 5" };
+
+const RESULTS = [
+  { id:"apob",  name:"ApoB",            value:1.18, unit:"g/L",    range:"under 0.90",   status:"flag", target:true,  cva:3.0, cvi:6.9, better:"lower" },
+  { id:"hba1c", name:"HbA1c",           value:6.1,  unit:"%",      range:"under 6.0",    status:"flag", target:true,  cva:1.5, cvi:1.6, better:"lower" },
+  { id:"ldl",   name:"LDL cholesterol", value:3.6,  unit:"mmol/L", range:"under 3.5",    status:"warn", target:false, cva:2.5, cvi:7.8, better:"lower" },
+  { id:"crp",   name:"hs-CRP",          value:2.4,  unit:"mg/L",   range:"under 1.0",    status:"warn", target:false, cva:5.0, cvi:34,  better:"lower" },
+  { id:"vitd",  name:"Vitamin D",       value:58,   unit:"nmol/L", range:"75 to 150",    status:"warn", target:false, cva:5.0, cvi:7.0, better:"higher" },
+  { id:"ferr",  name:"Ferritin",        value:64,   unit:"µg/L",   range:"30 to 200",    status:"ok",   target:false, cva:3.0, cvi:14,  better:"either" },
+];
+
+// Each target has ladders of actions: easy, standard, harder
+const ACTIONS = [
+  { id:"beans",   marker:"apob",  level:1, img:"beans", title:"Add beans or lentils to one meal",            why:"Soluble fibre binds bile acids, so your liver pulls more LDL particles out of your blood." },
+  { id:"oats",    marker:"apob",  level:2, img:"bowl",  title:"Oats or barley for breakfast",                 why:"About 3 g a day of oat beta glucan lowers LDL cholesterol in trials." },
+  { id:"oil",     marker:"apob",  level:2, img:"cook",  title:"Cook with olive or canola oil instead of butter", why:"Swapping saturated fat for unsaturated fat lowers LDL and ApoB." },
+  { id:"fibre3",  marker:"apob",  level:3, img:"beans", title:"Three fibre rich servings today",              why:"Beans, oats, barley and lentils add up. Three servings covers most of a day's soluble fibre." },
+  { id:"walk10",  marker:"hba1c", level:1, img:"walk",  title:"10 minute walk after lunch",                   why:"Moving after a meal helps muscles soak up glucose, flattening the spike." },
+  { id:"vegfirst",marker:"hba1c", level:2, img:"pan",   title:"Vegetables and protein before carbs at dinner", why:"Eating carbs last slows how fast glucose reaches your blood." },
+  { id:"drink",   marker:"hba1c", level:2, img:"pan",   title:"Swap a sweet drink for water or sparkling water", why:"Sweet drinks raise blood sugar quickly without filling you up." },
+  { id:"walk20",  marker:"hba1c", level:3, img:"walk",  title:"20 minute walk after your two biggest meals",   why:"More post meal movement means a smaller glucose rise, day after day." },
+];
+const IMG_ALT = { beans:"Beans and vegetables in a jar", bowl:"Bowl of grains, chickpeas and vegetables", cook:"Couple cooking together at home", pan:"Hands stirring vegetables in a pan", walk:"Person in running shoes walking up steps" };
+
+const LESSONS = [
+  { marker:"ApoB", title:"What ApoB actually counts", body:"Every LDL particle, and a few related particles, carries exactly one ApoB protein. So ApoB counts how many cholesterol carrying particles are in your blood. More particles means more chances for one to lodge in an artery wall.", q:"How many ApoB proteins does one LDL particle carry?", opts:["One","Ten","It varies a lot"], a:0, fb:"One per particle, which is why ApoB works as a particle count." },
+  { marker:"HbA1c", title:"Why HbA1c moves slowly", body:"HbA1c measures how much sugar has stuck to your red blood cells. Red blood cells live about 120 days, so HbA1c reflects your average blood sugar over the past 2 to 3 months. That's why a retest needs time.", q:"Roughly how long a period does HbA1c reflect?", opts:["The past day","The past 2 to 3 months","The past year"], a:1, fb:"Red blood cells live about 4 months, so HbA1c is a 2 to 3 month average." },
+  { marker:"ApoB", title:"How fibre lowers ApoB", body:"Soluble fibre forms a gel in your gut that traps bile acids. Your liver then uses cholesterol to make new bile acids, pulling more LDL particles out of your blood to do it.", q:"Which food is richest in soluble fibre?", opts:["White bread","Oats","Chicken"], a:1, fb:"Oats, barley, beans and lentils are the best everyday sources." },
+  { marker:"HbA1c", title:"The after meal walk", body:"Your muscles can take up glucose when they work, even without much insulin. A short walk soon after eating blunts the rise in blood sugar that follows a meal.", q:"When does a short walk help blood sugar most?", opts:["Right after a meal","Before bed","It doesn't matter"], a:0, fb:"Soon after eating, when glucose is rising." },
+  { marker:"Both", title:"Why small changes might be noise", body:"Your results bounce a little between tests even if nothing changes, from things like hydration, a recent cold, or the lab itself. A change only counts as real when it is bigger than that normal bounce.", q:"Your ApoB dropped 3% at retest. What does it mean?", opts:["Definitely improving","Probably within normal variation","Getting worse"], a:1, fb:"A 3% change is within normal test to test variation for ApoB." },
+  { marker:"HbA1c", title:"Sleep and blood sugar", body:"Short sleep makes your body less sensitive to insulin the next day, so the same meal raises blood sugar more. Sleep is part of the HbA1c plan.", q:"What does short sleep do to insulin sensitivity?", opts:["Raises it","Lowers it","No effect"], a:1, fb:"It lowers it, so blood sugar runs higher." },
+  { marker:"ApoB", title:"Fats that help", body:"Replacing saturated fats like butter with unsaturated fats like olive oil, canola oil, nuts and avocado lowers LDL cholesterol and ApoB.", q:"Which swap lowers ApoB?", opts:["Butter to olive oil","Olive oil to butter","Nuts to chips"], a:0, fb:"Unsaturated fats in place of saturated fats." },
+];
+
+/* ---------- Dates ---------- */
+const DAY = 864e5;
+const CYCLE_LEN = 84, CYCLE_DAY = 28; // today is day 28
+const today = new Date(); today.setHours(12,0,0,0);
+const key = d => d.toISOString().slice(0,10);
+const todayKey = key(today);
+const cycleStart = new Date(today.getTime() - (CYCLE_DAY-1)*DAY);
+const dayKeys = Array.from({length:CYCLE_DAY}, (_,i) => key(new Date(cycleStart.getTime()+i*DAY)));
+
+/* ---------- Seeded example history ---------- */
+function rng(seed){ let s = seed>>>0; return () => { s = (s*1664525 + 1013904223)>>>0; return s/4294967296; }; }
+function seedState(){
+  const r = rng(41);
+  const logs = {};
+  const order = ["beans","walk10","oats","vegfirst","oil","drink"];
+  dayKeys.slice(0,-1).forEach((k,i) => {
+    const dow = new Date(k+"T12:00:00").getDay();
+    const weekend = dow===0 || dow===6;
+    const sleep = Math.round((6.4 + r()*1.8 + (weekend?0.4:0))*2)/2;
+    const good = sleep >= 7;
+    const steps = Math.round((5200 + r()*5200 + (good?1200:0) - (weekend?900:0))/500)*500;
+    const energy = Math.max(1, Math.min(5, Math.round(2 + (sleep-6)*0.9 + r()*1.2)));
+    const fibre = Math.max(0, Math.min(4, Math.round(r()*2.2 + (i>10?0.8:0))));
+    const a1 = order[(Math.floor(i/7)*2)%order.length], a2 = order[(Math.floor(i/7)*2+1)%order.length];
+    const pDone = (good?0.82:0.5) - (weekend?0.15:0) + (i>14?0.06:0);
+    const st = () => { const x = r(); return x < pDone ? "done" : x < pDone+0.18 ? "partly" : "skip"; };
+    const actions = {}; actions[a1] = st(); actions[a2] = st();
+    logs[k] = { sleep, steps, energy, fibre, actions, quiz: r() < 0.7, checked:true };
+  });
+  logs[todayKey] = { sleep:7, steps:6500, energy:3, fibre:1, actions:{}, quiz:false, checked:false };
+  return { v:1, logs, swaps:{}, chat:[], devices:["apple"] };
+}
+
+/* ---------- Storage (per viewer, best effort) ---------- */
+const STORE = "dailyloop.v1";
+let state;
+try { state = JSON.parse(localStorage.getItem(STORE) || "null"); } catch(e){ state = null; }
+if (!state || state.v !== 1 || !state.logs || !state.logs[dayKeys[0]]) state = seedState();
+if (!state.logs[todayKey]) state.logs[todayKey] = { sleep:7, steps:6500, energy:3, fibre:1, actions:{}, quiz:false, checked:false };
+if (!Array.isArray(state.devices)) state.devices = ["apple"];
+function save(){ try { localStorage.setItem(STORE, JSON.stringify(state)); } catch(e){} }
+save();
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmtDate = d => d.toLocaleDateString("en-CA", { weekday:"long", month:"long", day:"numeric" });
+const fmtNum = n => Number(n).toLocaleString("en-CA");
+const fmtSleep = h => { const hh = Math.floor(h), mm = Math.round((h - hh)*60); return mm ? `${hh} h ${mm} m` : `${hh} h`; };
+
+/* ---------- Phone and watch (simulated in this concept) ---------- */
+const DEVICES = [
+  { id:"apple",  name:"Apple Health",   short:"Apple Watch",    sub:"iPhone and Apple Watch" },
+  { id:"google", name:"Health Connect", short:"Health Connect", sub:"Android phones and Wear OS" },
+  { id:"fitbit", name:"Fitbit",         short:"Fitbit",         sub:"Fitbit watches and trackers" },
+  { id:"garmin", name:"Garmin Connect", short:"Garmin",         sub:"Garmin watches" },
+  { id:"oura",   name:"Oura",           short:"Oura Ring",      sub:"Oura Ring" },
+];
+const connected = () => DEVICES.filter(d => state.devices.includes(d.id));
+// Resting heart rate and active minutes, derived from each day's sleep and steps so they stay consistent
+function wearable(k){
+  const l = state.logs[k]; if (!l) return { rhr:62, active:20 };
+  const r = rng(Number(k.replace(/-/g,"")) * 7), i = dayKeys.indexOf(k);
+  return { rhr: Math.round(64 - (l.sleep - 6.5)*1.6 - (i > 14 ? 1 : 0) + r()*2), active: Math.round(l.steps/240 + r()*6) };
+}
+const lastWeekRhr = () => Math.round(mean(dayKeys.slice(-8,-1).map(k => wearable(k).rhr)));
+const SVG = {
+  steps:`<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="13.5" cy="4.5" r="2"/><path d="M8.5 21l3-6.5 3 2.5V21M7 12l3.5-4 4 1.5 2.5 3.5M10.5 8l1.5 6.5"/></svg>`,
+  sleep:`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>`,
+  heart:`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7.5-4.6-7.5-10A4.3 4.3 0 0 1 12 7.4 4.3 4.3 0 0 1 19.5 10c0 5.4-7.5 10-7.5 10z"/></svg>`,
+  bolt:`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 3 5 13.5h6L10 21l8-10.5h-6z"/></svg>`,
+  watch:`<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="6" width="11" height="12" rx="3"/><path d="M9 6l.6-3h4.8l.6 3M9 18l.6 3h4.8l.6-3M12 9.5V12l1.5 1"/></svg>`,
+};
+function renderMetrics(){
+  const devs = connected(), l = state.logs[todayKey], w = wearable(todayKey), sync = $("#syncText");
+  if (!devs.length) {
+    sync.innerHTML = `${SVG.watch}Not connected`;
+    $("#metrics").innerHTML = `<button class="row-card plain span2" type="button" data-open-devices>
+      <span class="ic">${SVG.watch}</span>
+      <span class="tt"><b>Connect your phone or watch</b><small>Steps, sleep and heart rate, without logging</small></span>
+      <span class="st">Connect</span></button>`;
+    return;
+  }
+  const t = new Date(Date.now() - 4*60000);
+  sync.innerHTML = `<span class="live" aria-hidden="true"></span>${esc(devs[0].short)} · ${t.toLocaleTimeString("en-CA",{ hour:"numeric", minute:"2-digit" })}`;
+  sync.setAttribute("aria-label", `Synced from ${devs[0].name}. Manage phone and watch`);
+  const goal = 9000, pct = Math.min(100, Math.round(l.steps/goal*100)), d = w.rhr - lastWeekRhr();
+  const tile = (icon, k, v, sub, extra = "") => `<div class="metric"><span class="k">${icon}${k}</span><span class="v num">${v}</span>${extra}<span class="s">${sub}</span></div>`;
+  $("#metrics").innerHTML =
+    tile(SVG.steps, "Steps", fmtNum(l.steps), `${pct}% of ${fmtNum(goal)}`, `<span class="meter" aria-hidden="true"><i style="width:${pct}%"></i></span>`) +
+    tile(SVG.sleep, "Sleep", fmtSleep(l.sleep), "Last night") +
+    tile(SVG.heart, "Resting HR", `${w.rhr} <small>bpm</small>`, d === 0 ? "Same as last week" : `${Math.abs(d)} bpm ${d < 0 ? "lower" : "higher"} than last week`) +
+    tile(SVG.bolt, "Active", `${w.active} <small>min</small>`, "Goal 30 a day");
+}
+function renderDevices(){
+  $("#deviceList").innerHTML = DEVICES.map(dv => { const on = state.devices.includes(dv.id);
+    return `<div class="dev"><span class="ic">${SVG.watch}</span><span class="tt"><b>${esc(dv.name)}</b><small>${esc(dv.sub)}</small></span>
+      <button class="chipbtn" type="button" data-dev="${dv.id}" aria-pressed="${on}" aria-label="${on ? "Disconnect" : "Connect"} ${esc(dv.name)}">${on ? "Connected" : "Connect"}</button></div>`; }).join("");
+  const devs = connected();
+  $("#devSum").textContent = devs.length ? devs.map(d => d.name).join(", ") + " connected" : "Nothing connected yet";
+  $("#devState").textContent = devs.length ? `${devs.length} linked` : "Connect";
+}
+$("#deviceList").addEventListener("click", e => {
+  const b = e.target.closest("[data-dev]"); if (!b) return;
+  const id = b.dataset.dev;
+  state.devices = state.devices.includes(id) ? state.devices.filter(x => x !== id) : state.devices.concat(id);
+  save(); renderDevices(); renderMetrics(); renderLog(); renderContext();
+  if (!aiNote) $("#tipText").textContent = localNote();
+  const again = document.querySelector(`[data-dev="${id}"]`); if (again) again.focus();
+});
+document.addEventListener("click", e => { if (e.target.closest("[data-open-devices], #openDevices, #syncText")) openSheet("#sheetDevices"); });
+
+// A note written from the member's own data. The AI button rewrites it with Claude.
+let aiNote = null;
+function localNote(){
+  const l = state.logs[todayKey], w = wearable(todayKey), d = w.rhr - lastWeekRhr();
+  const act = todaysPlan.find(a => a.marker === "hba1c") || todaysPlan[0];
+  if (!connected().length) return `Connect your phone or watch and I'll plan around your sleep and steps. For now, start with "${act.title.toLowerCase()}".`;
+  const sleepBit = l.sleep >= 7 ? `You slept ${fmtSleep(l.sleep)}, and after nights like that you finish most of your actions.` : `Short night: ${fmtSleep(l.sleep)} of sleep, so keep today simple.`;
+  const hrBit = d < 0 ? ` Your resting heart rate is ${Math.abs(d)} bpm lower than last week.` : "";
+  return `${sleepBit}${hrBit} You're at ${fmtNum(l.steps)} steps, so "${act.title.toLowerCase()}" is today's easiest win.`;
+}
+function setGuard(t){ const g = $("#tipGuard"); g.textContent = t || ""; g.hidden = !t; }
+
+/* ---------- Grades ---------- */
+function grade(x){ return x>=.9?"A":x>=.8?"A−":x>=.73?"B+":x>=.66?"B":x>=.6?"B−":x>=.53?"C+":x>=.46?"C":"D"; }
+function dayScore(l){ const v = Object.values((l&&l.actions)||{}); if (!v.length) return 0; return v.reduce((s,x) => s + (x==="done"?1:x==="partly"?0.5:0), 0) / v.length; }
+function adherenceOf(keys){
+  const ls = keys.map(k => state.logs[k]).filter(l => l && Object.keys(l.actions||{}).length);
+  return ls.length ? ls.reduce((s,l) => s + dayScore(l), 0) / ls.length : 0;
+}
+
+/* ---------- Adaptive plan engine ---------- */
+// Beta(1+done,1+missed) per action from history; pick per target the action with the best sampled score,
+// stepping up a level when the current one is done most days and down when it's missed.
+function actionStats(){
+  const s = {}; ACTIONS.forEach(a => s[a.id] = { done:0, partly:0, skip:0, n:0 });
+  Object.entries(state.logs).forEach(([k,l]) => { if (k===todayKey) return; Object.entries(l.actions||{}).forEach(([id,v]) => { if (s[id]) { s[id][v]++; s[id].n++; } }); });
+  return s;
+}
+function rate(st){ return st.n ? (st.done + 0.5*st.partly)/st.n : null; }
+function planFor(marker, stats, dayRand){
+  const pool = ACTIONS.filter(a => a.marker === marker && !(state.swaps[todayKey]||[]).includes(a.id));
+  const recent = pool.filter(a => stats[a.id].n > 0).sort((a,b) => rate(stats[b.id]) - rate(stats[a.id]));
+  let pick, reason;
+  const best = recent[0];
+  if (best && rate(stats[best.id]) >= 0.75) {
+    const harder = pool.filter(a => a.level > best.level && stats[a.id].n === 0)[0];
+    if (harder && dayRand() < 0.5) { pick = harder; reason = `Stepping up: you've done "${best.title.toLowerCase()}" ${Math.round(rate(stats[best.id])*100)}% of the time.`; }
+  }
+  if (!pick) {
+    // Thompson style: sample a score per action
+    let top = -1;
+    pool.forEach(a => { const st = stats[a.id]; const sc = betaSample(1 + st.done + 0.5*st.partly, 1 + st.skip + 0.5*st.partly, dayRand) - (a.level-1)*0.05; if (sc > top) { top = sc; pick = a; } });
+    const r = rate(stats[pick.id]);
+    reason = r === null ? "Trying something new for this target." : r < 0.5 ? `Easier option picked: this one sticks ${Math.round(r*100)}% of the time.` : `This one works for you: done ${Math.round(r*100)}% of the time.`;
+  }
+  return { ...pick, reason };
+}
+function betaSample(a, b, rand){ // mean plus small jitter, stable per day
+  const m = a/(a+b), sd = Math.sqrt(a*b/((a+b)**2*(a+b+1)));
+  return m + (rand()-0.5)*2*sd;
+}
+let todaysPlan = [];
+function buildPlan(){
+  const stats = actionStats();
+  const dayRand = rng(Number(todayKey.replace(/-/g,"")) + (state.swaps[todayKey]||[]).length*97);
+  todaysPlan = RESULTS.filter(r => r.target).map(r => planFor(r.id, stats, dayRand));
+  if (todaysPlan.length === 2 && todaysPlan[0].img === todaysPlan[1].img) todaysPlan[1] = { ...todaysPlan[1], img: todaysPlan[1].marker === "hba1c" ? "walk" : "bowl" };
+}
+
+/* ---------- Header ---------- */
+function renderHeader(){
+  const h = new Date().getHours();
+  $("#todayLabel").textContent = fmtDate(new Date());
+  $("#greeting").textContent = `${h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening"}, ${MEMBER.name}`;
+  $("#retestIn").textContent = `Day ${CYCLE_DAY} of ${CYCLE_LEN} · retest in ${CYCLE_LEN - CYCLE_DAY} days`;
+  renderGrades();
+}
+function renderGrades(){
+  const cyc = adherenceOf(dayKeys);
+  $("#cycleGrade").textContent = grade(cyc);
+  $("#cycleGradeSub").textContent = `${Math.round(cyc*100)}% of actions done`;
+}
+
+/* ---------- Home: actions ---------- */
+const CHECK = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const ICON_SPARK = `<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1v4M8 11v4M1 8h4M11 8h4M3 3l2.5 2.5M10.5 10.5 13 13M13 3l-2.5 2.5M5.5 10.5 3 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`;
+const expanded = new Set();
+function renderActions(){
+  const log = state.logs[todayKey];
+  $("#actionList").innerHTML = todaysPlan.map(a => {
+    const m = RESULTS.find(r => r.id === a.marker);
+    const v = log.actions[a.id], open = expanded.has(a.id);
+    const st = v==="done" ? "Done" : v==="partly" ? "Partly done" : v==="skip" ? "Not today" : "";
+    const pill = (val,label) => `<button class="chipbtn" type="button" data-id="${a.id}" data-v="${val}" aria-pressed="${v===val}">${label}</button>`;
+    return `<article class="act${v==="done"?" is-done":""}">
+      <img class="thumb" src="images/${a.img}.jpg" alt="${esc(IMG_ALT[a.img]||"")}" width="128" height="128">
+      <div class="act-main">
+        <span class="tag">For ${esc(m.name)}</span>
+        <h3>${esc(a.title)}</h3>
+        ${st ? `<span class="state${v==="skip"?" skip":""}">${st}</span>` : ""}
+        <button class="more" type="button" data-more="${a.id}" aria-expanded="${open}">${open ? "Hide" : "Why this?"}</button>
+      </div>
+      <button class="check" type="button" data-id="${a.id}" data-v="done" aria-pressed="${v==="done"}" aria-label="Mark ${esc(a.title)} as done">${CHECK}</button>
+      <div class="act-more"${open ? "" : " hidden"}>
+        <p>${esc(a.why)}</p>
+        <p class="reason">${ICON_SPARK}<span>${esc(a.reason)}</span></p>
+        <div class="mini-row">${pill("partly","Partly")}${pill("skip","Not today")}<button class="chipbtn ghost" type="button" data-swap="${a.id}">Swap it</button></div>
+      </div></article>`;
+  }).join("");
+  const done = todaysPlan.filter(a => log.actions[a.id] === "done").length;
+  const dt = $("#doneText");
+  dt.textContent = done === todaysPlan.length ? "All done ✓" : `${done} of ${todaysPlan.length} done`;
+  dt.classList.toggle("all", done === todaysPlan.length);
+}
+$("#actionList").addEventListener("click", e => {
+  const b = e.target.closest("[data-v]");
+  if (b) {
+    const log = state.logs[todayKey], id = b.dataset.id, v = b.dataset.v;
+    log.actions[id] = log.actions[id] === v ? undefined : v;
+    if (!log.actions[id]) delete log.actions[id];
+    save(); renderActions(); renderProgress(); renderGrades();
+    const again = document.querySelector(`#actionList [data-id="${id}"][data-v="${v}"]`); if (again) again.focus();
+    return;
+  }
+  const m = e.target.closest("[data-more]");
+  if (m) {
+    const id = m.dataset.more; expanded.has(id) ? expanded.delete(id) : expanded.add(id);
+    renderActions(); const again = document.querySelector(`[data-more="${id}"]`); if (again) again.focus();
+    return;
+  }
+  const s = e.target.closest("[data-swap]");
+  if (s) {
+    expanded.delete(s.dataset.swap);
+    (state.swaps[todayKey] = state.swaps[todayKey] || []).push(s.dataset.swap);
+    delete state.logs[todayKey].actions[s.dataset.swap];
+    save(); buildPlan(); renderActions();
+  }
+});
+
+/* ---------- Sheets ---------- */
+function openSheet(id){ const d = $(id); if (d.showModal) d.showModal(); else d.setAttribute("open",""); }
+function closeSheet(d){ if (d.close) d.close(); else d.removeAttribute("open"); }
+document.querySelectorAll("dialog.sheet").forEach(d => {
+  d.addEventListener("click", e => { if (e.target === d || e.target.closest("[data-close]")) closeSheet(d); });
+});
+
+/* ---------- Check in ---------- */
+function setFill(el){ const p = (el.value - el.min) / (el.max - el.min) * 100; el.style.setProperty("--p", p + "%"); }
+function renderLog(){
+  const log = state.logs[todayKey];
+  const devs = connected();
+  $("#manualFields").hidden = devs.length > 0; $("#syncedNote").hidden = !devs.length;
+  if (devs.length) $("#syncedText").textContent = `Sleep (${fmtSleep(log.sleep)}) and steps (${fmtNum(log.steps)}) came from your ${devs[0].short}.`;
+  const sleep = $("#sleep"), steps = $("#steps");
+  sleep.value = log.sleep; steps.value = log.steps; setFill(sleep); setFill(steps);
+  $("#sleepOut").textContent = `${log.sleep} h`; $("#stepsOut").textContent = Number(log.steps).toLocaleString("en-CA");
+  const seg = (el, field, vals) => { el.innerHTML = vals.map(v => `<button type="button" data-f="${field}" data-val="${v}" aria-pressed="${log[field]===v}">${v}${field==="fibre"&&v===4?"+":""}</button>`).join(""); };
+  seg($("#energy"), "energy", [1,2,3,4,5]);
+  seg($("#fibre"), "fibre", [0,1,2,3,4]);
+  renderCheckinRow();
+}
+function renderCheckinRow(){
+  const l = state.logs[todayKey];
+  $("#ciSum").textContent = l.checked ? `Energy ${l.energy}/5 · ${l.fibre} fibre serving${l.fibre === 1 ? "" : "s"}` : connected().length ? "Energy and fibre" : "Sleep, steps, energy and fibre";
+  const s = $("#ciState"); s.textContent = l.checked ? "Done ✓" : "20 sec"; s.classList.toggle("done", !!l.checked);
+}
+$("#openCheckin").addEventListener("click", () => openSheet("#sheetCheckin"));
+$("#sleep").addEventListener("input", e => { state.logs[todayKey].sleep = Number(e.target.value); $("#sleepOut").textContent = `${e.target.value} h`; setFill(e.target); save(); renderProgress(); renderMetrics(); });
+$("#steps").addEventListener("input", e => { state.logs[todayKey].steps = Number(e.target.value); $("#stepsOut").textContent = Number(e.target.value).toLocaleString("en-CA"); setFill(e.target); save(); renderProgress(); renderMetrics(); });
+document.querySelectorAll(".seg").forEach(el => el.addEventListener("click", e => {
+  const b = e.target.closest("[data-f]"); if (!b) return;
+  const f = b.dataset.f, v = b.dataset.val;
+  state.logs[todayKey][f] = Number(v); save(); renderLog(); renderProgress();
+  const again = document.querySelector(`[data-f="${f}"][data-val="${v}"]`); if (again) again.focus();
+}));
+$("#saveCheckin").addEventListener("click", () => { state.logs[todayKey].checked = true; save(); renderCheckinRow(); closeSheet($("#sheetCheckin")); });
+
+/* ---------- Lesson ---------- */
+let lessonIdx = (CYCLE_DAY - 1) % LESSONS.length;
+function renderLesson(){
+  const L = LESSONS[lessonIdx];
+  $("#lessonChip").textContent = L.marker === "Both" ? "ApoB and HbA1c" : L.marker;
+  $("#lsTitle").textContent = L.title;
+  $("#lessonBody").innerHTML = `<div class="lesson">
+      <h2 class="lesson-title" id="lessonHead" tabindex="-1" autofocus>${esc(L.title)}</h2>
+      <p class="lesson-body">${esc(L.body)}</p>
+      <div class="quiz" role="group" aria-label="Quick question">
+        <span class="label">Quick question</span>
+        <p class="q">${esc(L.q)}</p>
+        ${L.opts.map((o,i) => `<button class="qopt" type="button" data-q="${i}"><span>${esc(o)}</span><span aria-hidden="true">→</span></button>`).join("")}
+        <p class="qfeedback" id="qfb" aria-live="polite"></p>
+      </div>
+      <button class="pill cream block" type="button" data-close>Finish lesson</button>
+    </div>`;
+  renderLessonRow();
+}
+function renderLessonRow(){
+  const done = state.logs[todayKey].quiz;
+  const s = $("#lsState"); s.textContent = done ? "Done ✓" : "2 min"; s.classList.toggle("done", !!done);
+}
+$("#openLesson").addEventListener("click", () => openSheet("#sheetLesson"));
+$("#lessonBody").addEventListener("click", e => {
+  const b = e.target.closest("[data-q]"); if (!b) return;
+  const L = LESSONS[lessonIdx], i = Number(b.dataset.q);
+  document.querySelectorAll(".qopt").forEach((x,j) => { x.disabled = true; x.lastElementChild.textContent = j===L.a ? "✓" : j===i ? "✕" : ""; if (j===L.a) x.classList.add("right"); else if (j===i) x.classList.add("wrong"); });
+  $("#qfb").textContent = (i===L.a ? "Right. " : "Not quite. ") + L.fb;
+  state.logs[todayKey].quiz = true; save(); renderLessonRow(); renderProgress();
+});
+
+/* ---------- Progress ---------- */
+function renderProgress(){
+  const past = dayKeys.map(k => state.logs[k]).filter(Boolean);
+  let streak = 0; for (let i = dayKeys.length-1; i >= 0; i--) { const l = state.logs[dayKeys[i]]; if (dayKeys[i]===todayKey && !Object.keys(l.actions).length) continue; if (l && dayScore(l) >= 0.5) streak++; else break; }
+  const avgSleep = past.reduce((s,l)=>s+l.sleep,0)/past.length;
+  const last7 = dayKeys.slice(-7).map(k=>state.logs[k]), prev7 = dayKeys.slice(-14,-7).map(k=>state.logs[k]);
+  const s7 = last7.reduce((s,l)=>s+l.steps,0)/7, sp7 = prev7.reduce((s,l)=>s+l.steps,0)/7;
+  const lessons = past.filter(l => l.quiz).length;
+  const tile = (label, v, sub, g) => `<div class="stat"><div class="top"><span class="label">${label}</span><span class="g" title="Grade">${g}</span></div><div class="v num">${v}</div><small>${sub}</small></div>`;
+  $("#statTiles").innerHTML =
+    tile("Streak", `${streak} days`, "at least half done", grade(Math.min(1, streak/7))) +
+    tile("Steps", Math.round(s7).toLocaleString("en-CA"), `7 day average, ${s7>=sp7?"up":"down"} ${Math.abs(Math.round((s7-sp7)/sp7*100))}%`, grade(Math.min(1, s7/9000))) +
+    tile("Sleep", `${avgSleep.toFixed(1)} h`, "average this cycle", grade(Math.min(1, avgSleep/8))) +
+    tile("Lessons", `${lessons} of ${CYCLE_DAY}`, "finished this cycle", grade(lessons/CYCLE_DAY));
+
+  const firstDow = (new Date(dayKeys[0]+"T12:00:00").getDay()+6)%7; // Monday first
+  $("#dowRow").innerHTML = ["M","T","W","T","F","S","S"].map(d=>`<span>${d}</span>`).join("");
+  let cells = Array.from({length:firstDow}, () => `<div class="c blank"></div>`);
+  dayKeys.forEach(k => { const l = state.logs[k]; const sc = dayScore(l); const lv = !Object.keys(l.actions||{}).length ? 0 : sc >= 0.99 ? 3 : sc >= 0.5 ? 2 : sc > 0 ? 1 : 0;
+    cells.push(`<div class="c${k===todayKey?" today":""}" data-l="${lv}" title="${k}: ${Math.round(sc*100)}% done"></div>`); });
+  $("#heatmap").innerHTML = cells.join("");
+
+  renderTrend(); renderBars(); renderInsights();
+}
+
+function renderTrend(){
+  const W = 360, H = 200, L = 32, R = 30, T = 12, B = 28;
+  const iw = W-L-R, ih = H-T-B;
+  const data = dayKeys.map(k => state.logs[k]);
+  const x = i => L + i*(iw/(data.length-1));
+  const yS = v => T + ih - (v/16000)*ih;
+  const yZ = v => T + ih - ((v-4)/6)*ih;
+  const stepPath = data.map((d,i) => `${i?"L":"M"}${x(i).toFixed(1)} ${yS(d.steps).toFixed(1)}`).join("");
+  const area = stepPath + `L${x(data.length-1)} ${T+ih}L${x(0)} ${T+ih}Z`;
+  const sleepPath = data.map((d,i) => `${i?"L":"M"}${x(i).toFixed(1)} ${yZ(d.sleep).toFixed(1)}`).join("");
+  const last = data.length-1;
+  const ff = `font-family="Hanken Grotesk, system-ui, sans-serif"`;
+  let svg = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Daily steps and sleep over the last 28 days">`;
+  [0,4000,8000,12000,16000].forEach(v => { svg += `<line x1="${L}" x2="${W-R}" y1="${yS(v)}" y2="${yS(v)}" stroke="var(--line)" stroke-width="1"/>
+    <text x="${L-6}" y="${yS(v)+3.5}" text-anchor="end" font-size="10" fill="var(--muted)" ${ff}>${v/1000}k</text>`; });
+  [4,6,8,10].forEach(v => { svg += `<text x="${W-R+6}" y="${yZ(v)+3.5}" font-size="10" fill="var(--chart-b)" ${ff}>${v}h</text>`; });
+  [0,9,18,last].forEach(i => { const d = new Date(dayKeys[i]+"T12:00:00"); svg += `<text x="${x(i)}" y="${H-8}" text-anchor="${i===0?"start":i===last?"end":"middle"}" font-size="10" fill="var(--muted)" ${ff}>${d.toLocaleDateString("en-CA",{month:"short",day:"numeric"})}</text>`; });
+  svg += `<path d="${area}" fill="var(--chart-a)" fill-opacity="0.14"/>`;
+  svg += `<path d="${stepPath}" fill="none" stroke="var(--chart-a)" stroke-width="2" stroke-linejoin="round"/>`;
+  svg += `<path d="${sleepPath}" fill="none" stroke="var(--chart-b)" stroke-width="1.6" stroke-dasharray="4 3" stroke-linejoin="round"/>`;
+  svg += `<circle cx="${x(last)}" cy="${yS(data[last].steps)}" r="4" fill="var(--chart-a)"/><circle cx="${x(last)}" cy="${yZ(data[last].sleep)}" r="3.5" fill="var(--chart-b)"/>`;
+  svg += `</svg><div class="legend"><span class="c ca"></span> Steps <span class="gap"></span><span class="c cb"></span> Sleep hours (dashed)</div>`;
+  $("#trendChart").innerHTML = svg;
+}
+
+function renderBars(){
+  const st = actionStats();
+  const rows = ACTIONS.filter(a => st[a.id].n).map(a => ({ a, r: rate(st[a.id]), n: st[a.id].n })).sort((p,q) => q.r - p.r);
+  $("#actionBars").innerHTML = rows.map(({a,r,n}) => `<div class="barrow"><span>${esc(a.title)} <span class="xs muted">· ${n} days</span></span>
+    <span class="barval"><b>${grade(r)}</b><span class="muted">${Math.round(r*100)}%</span></span>
+    <div class="bartrack" role="img" aria-label="${Math.round(r*100)} percent"><div class="barfill${r<0.5?" low":""}" style="width:${Math.round(r*100)}%"></div></div></div>`).join("");
+}
+
+function mean(a){ return a.length ? a.reduce((s,x)=>s+x,0)/a.length : 0; }
+function pearson(xs, ys){ const mx = mean(xs), my = mean(ys); let n=0,dx=0,dy=0; xs.forEach((x,i)=>{ n+=(x-mx)*(ys[i]-my); dx+=(x-mx)**2; dy+=(ys[i]-my)**2; }); return dx&&dy ? n/Math.sqrt(dx*dy) : 0; }
+function computeInsights(){
+  const days = dayKeys.filter(k => k!==todayKey).map(k => ({ k, ...state.logs[k], score: dayScore(state.logs[k]), dow: new Date(k+"T12:00:00").getDay() }));
+  const out = [];
+  const goodSleep = days.filter(d => d.sleep >= 7), poorSleep = days.filter(d => d.sleep < 7);
+  if (goodSleep.length >= 3 && poorSleep.length >= 3) {
+    const a = mean(goodSleep.map(d=>d.score)), b = mean(poorSleep.map(d=>d.score));
+    out.push({ head:`${Math.round(a*100)}% vs ${Math.round(b*100)}%`, text:`Actions completed after 7+ hours of sleep, compared with shorter nights. Protecting sleep may be the easiest win.`, strength: Math.abs(a-b) });
+  }
+  const wk = days.filter(d => d.dow>0 && d.dow<6), we = days.filter(d => d.dow===0 || d.dow===6);
+  if (wk.length && we.length) {
+    const a = mean(wk.map(d=>d.score)), b = mean(we.map(d=>d.score));
+    out.push({ head:`Weekends ${b<a?"slip":"hold up"}`, text:`Weekday completion is ${Math.round(a*100)}%, weekends ${Math.round(b*100)}%. ${b<a?"Weekend plans could use simpler actions.":"Your routine holds on weekends too."}`, strength: Math.abs(a-b) });
+  }
+  const r = pearson(days.map(d=>d.sleep), days.map(d=>d.energy));
+  out.push({ head:`Sleep and energy: r = ${r.toFixed(2)}`, text: r > 0.3 ? "Your energy tracks your sleep closely, so energy can work as an early warning for a rough week." : "Your energy doesn't follow sleep much. Other things like stress or meals may matter more.", strength: Math.abs(r)/2 });
+  return out.sort((p,q) => q.strength - p.strength);
+}
+function renderInsights(){
+  $("#insights").innerHTML = computeInsights().map(i => `<div class="insight"><b>${esc(i.head)}</b><p class="muted">${esc(i.text)}</p></div>`).join("") +
+    `<p class="xs muted">From ${CYCLE_DAY-1} days of watch data and check ins. Patterns, not proof of cause.</p>`;
+}
+
+/* ---------- Results + real change ---------- */
+function renderResults(){
+  $("#drawDate").textContent = "First blood test, drawn " + cycleStart.toLocaleDateString("en-CA",{month:"long",day:"numeric"});
+  const chip = s => s==="flag" ? `<span class="chip flag"><span class="dot"></span>Out of range</span>` : s==="warn" ? `<span class="chip warn"><span class="dot"></span>Borderline</span>` : `<span class="chip good"><span class="dot"></span>In range</span>`;
+  $("#resultRows").innerHTML = RESULTS.map(r => `<div class="mrow">
+      <span class="nm">${esc(r.name)}${r.target?`<span class="target-badge">Target</span>`:""}</span>
+      <span class="val"><strong>${r.value}</strong> <span class="muted">${esc(r.unit)}</span></span>
+      <span class="rg">Range ${esc(r.range)}</span>${chip(r.status)}</div>`).join("");
+  const sel = $("#ckMarker");
+  sel.innerHTML = RESULTS.filter(r => r.better!=="either").map(r => `<option value="${r.id}">${esc(r.name)}</option>`).join("");
+  sel.value = "apob"; $("#ckValue").value = 1.02; checkChange();
+}
+function rcv(r){ return 1.96*Math.SQRT2*Math.sqrt(r.cva**2 + r.cvi**2); }
+function checkChange(){
+  const r = RESULTS.find(x => x.id === $("#ckMarker").value);
+  const v = parseFloat($("#ckValue").value);
+  const t = rcv(r);
+  const el = $("#verdict");
+  if (!isFinite(v) || v <= 0) { el.className = "verdict"; el.innerHTML = `<p>Enter a retest value for ${esc(r.name)} in ${esc(r.unit)}. First result: <span class="num">${r.value}</span>.</p>`; return; }
+  const pct = (v - r.value)/r.value*100;
+  const improved = r.better==="lower" ? pct < -t : pct > t;
+  const worse = r.better==="lower" ? pct > t : pct < -t;
+  el.className = "verdict " + (improved ? "good" : worse ? "bad" : "noise");
+  const head = improved ? "Real improvement" : worse ? "Real change, in the wrong direction" : "Within normal variation";
+  const lo = -Math.max(40, t*1.6), hi = -lo, pos = x => ((x - lo)/(hi-lo))*100;
+  const clamp = x => Math.max(lo, Math.min(hi, x));
+  el.innerHTML = `<h3>${head}</h3>
+    <p>${esc(r.name)} went from <span class="num">${r.value}</span> to <span class="num">${v}</span> ${esc(r.unit)}, a <strong class="num">${pct>0?"+":""}${pct.toFixed(1)}%</strong> change. For ${esc(r.name)}, a change needs to be bigger than <strong class="num">±${t.toFixed(0)}%</strong> to count as real.</p>
+    <div class="scale" aria-hidden="true"><div class="track"></div><div class="zone" style="left:${pos(-t)}%;width:${pos(t)-pos(-t)}%"></div><div class="zero" style="left:${pos(0)}%"></div><div class="mark" style="left:calc(${pos(clamp(pct))}% - 2px)"></div></div>
+    <p class="scale-legend"><span class="num">${lo.toFixed(0)}%</span><span>shaded = normal variation</span><span class="num">+${hi.toFixed(0)}%</span></p>`;
+}
+$("#ckMarker").addEventListener("change", () => { const r = RESULTS.find(x => x.id === $("#ckMarker").value); $("#ckValue").value = r.value; checkChange(); });
+$("#ckValue").addEventListener("input", checkChange);
+
+/* ---------- AI (Claude via the sample capability) ---------- */
+function contextText(){
+  const last7 = dayKeys.slice(-7).map(k => { const l = state.logs[k], w = wearable(k); return `${k}: sleep ${l.sleep} h, steps ${l.steps}, resting heart rate ${w.rhr} bpm, active ${w.active} min, energy ${l.energy}/5, fibre servings ${l.fibre}, actions ${Object.entries(l.actions).map(([id,v]) => (ACTIONS.find(a=>a.id===id)||{}).title + " = " + v).join("; ") || "none logged yet"}`; }).join("\n");
+  const res = RESULTS.map(r => `${r.name}: ${r.value} ${r.unit} (range ${r.range})${r.target?" [TARGET]":""}`).join("\n");
+  const plan = todaysPlan.map(a => `- ${a.title} (for ${a.marker==="apob"?"ApoB":"HbA1c"})`).join("\n");
+  const lib = ACTIONS.map(a => `- ${a.title}: ${a.why}`).join("\n");
+  const pats = computeInsights().map(i => `- ${i.head}: ${i.text}`).join("\n");
+  return `MEMBER: ${MEMBER.name}, ${MEMBER.age}, ${MEMBER.sex}. Goal: ${MEMBER.goal}. Prefers: ${MEMBER.prefers}. Schedule: ${MEMBER.schedule}.
+CYCLE: day ${CYCLE_DAY} of ${CYCLE_LEN}; retest in ${CYCLE_LEN-CYCLE_DAY} days.
+PHONE AND WATCH: ${connected().length ? connected().map(d => d.name).join(", ") + " connected; sleep, steps, resting heart rate and active minutes sync automatically" : "nothing connected; sleep and steps are logged by hand"}.
+BLOOD RESULTS:\n${res}
+TODAY'S PLAN:\n${plan}
+LAST 7 DAYS:\n${last7}
+PATTERNS FOUND IN HER DATA:\n${pats}
+ACTION LIBRARY (the only actions you may suggest):\n${lib}`;
+}
+const RULES = `You are the AI health coach inside niadaily, an everyday health app (a concept demo). You know the member's blood results, their phone and watch data, and their daily habits. Rules:
+1. Only suggest actions from the ACTION LIBRARY below. Never invent new interventions, supplements or doses.
+2. Never diagnose, never give medication advice, never interpret symptoms. If the member mentions symptoms, medication, pregnancy or anything worrying, tell them to message their nurse practitioner and stop.
+3. Be warm, specific and brief: plain language, no jargon, no lists longer than 3 items, no headings, no markdown symbols.
+4. Use her real numbers, her watch data and her own patterns when relevant.`;
+
+let sample = null;
+function sampleMessage(code){
+  return code === "not_granted" ? "The AI coach needs permission to use Claude. You can allow it from this page's permissions."
+    : code === "rate_limited" ? "The coach is busy right now. Try again in a minute."
+    : code === "sampling_disabled" ? "Claude isn't available on this account, so the AI coach is off."
+    : "Something went wrong reaching the coach. Try again.";
+}
+function aiUnavailable(){
+  sample = null;
+  $("#tipBtn").disabled = true; $("#sendBtn").disabled = true;
+  setGuard("Writing a fresh note with AI works when this page is opened inside Claude.");
+  if (!state.chat.length) $("#chat").innerHTML = `<p class="notice">The AI coach runs when this page is opened inside Claude. Everything else in the app works anywhere.</p>`;
+  imgLimits = null; updateCheckAI();
+  $("#ckUpNote").textContent = "Reading a photo works when this link is opened inside Claude. The sample report works anywhere.";
+}
+
+let tipCtl;
+$("#tipBtn").addEventListener("click", async () => {
+  if (!sample) return;
+  const btn = $("#tipBtn"); btn.disabled = true; tipCtl = new AbortController();
+  $("#tipText").textContent = "Thinking...";
+  try {
+    const { text } = await sample(`${RULES}\n\n${contextText()}\n\nWrite today's coach note: 3 short sentences, under 70 words. Mention one thing she did well in the last 7 days, and one specific tip for today's plan that fits her schedule and patterns.`,
+      { modelTier:"quick", signal: tipCtl.signal, onText: ({text}) => { $("#tipText").textContent = text; } });
+    $("#tipText").textContent = text; aiNote = text;
+  } catch(e) {
+    $("#tipText").textContent = e.text || aiNote || localNote();
+    if (e.code !== "cancelled") setGuard(sampleMessage(e.code));
+    if (["not_granted","sampling_disabled","not_declared","capability_disabled","capability_removed"].includes(e.code)) aiUnavailable();
+  } finally { btn.disabled = !sample; }
+});
+
+const SUGGEST = ["Why is ApoB my target and not LDL?", "How is my sleep affecting my energy?", "What's a lunch at work that helps both targets?", "Am I on track for the retest?"];
+function renderChat(){
+  const chat = $("#chat");
+  if (!state.chat.length && sample) chat.innerHTML = `<div class="msg ai">Hi ${MEMBER.name}. I can see your blood results, your watch data, today's plan and your last 7 days. What would you like to work on?</div>`;
+  else if (state.chat.length) chat.innerHTML = state.chat.map(m => `<div class="msg ${m.role==="user"?"me":"ai"}">${esc(m.content)}</div>`).join("");
+  $("#suggest").innerHTML = SUGGEST.map(s => `<button type="button">${esc(s)}</button>`).join("");
+}
+$("#suggest").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; $("#ask").value = b.textContent; $("#composer").requestSubmit(); });
+$("#ask").addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); $("#composer").requestSubmit(); } });
+let chatCtl, sending = false;
+$("#composer").addEventListener("submit", async e => {
+  e.preventDefault();
+  const q = $("#ask").value.trim(); if (!q || !sample || sending) return;
+  sending = true; $("#sendBtn").disabled = true; $("#ask").value = "";
+  state.chat.push({ role:"user", content:q }); renderChat();
+  const bubble = document.createElement("div"); bubble.className = "msg ai"; bubble.textContent = "Thinking..."; $("#chat").append(bubble);
+  bubble.scrollIntoView({ block:"nearest" });
+  chatCtl = new AbortController();
+  const turns = state.chat.slice(-10);
+  try {
+    const { text } = await sample([{ role:"user", content: `${RULES}\n\n${contextText()}\n\nAnswer the member's messages that follow in under 120 words.` }, { role:"assistant", content:`Understood. I'll coach ${MEMBER.name} using only her data and the action library.` }, ...turns],
+      { cache:false, modelTier:"quick", signal: chatCtl.signal, onText: ({text}) => { bubble.textContent = text; } });
+    state.chat.push({ role:"assistant", content:text }); save(); renderChat();
+  } catch(err) {
+    bubble.textContent = err.text || sampleMessage(err.code);
+    if (err.code === "cancelled") bubble.remove();
+    if (["not_granted","sampling_disabled","not_declared","capability_disabled","capability_removed"].includes(err.code)) aiUnavailable();
+    state.chat.pop(); save();
+  } finally { sending = false; if (sample) $("#sendBtn").disabled = false; }
+});
+function renderContext(){
+  const items = [
+    ["Blood results", "6 markers, 2 targets: ApoB and HbA1c"],
+    ["Today's plan", todaysPlan.map(a => a.title).join(" · ")],
+    ["Phone and watch", connected().length ? connected().map(d => d.name).join(", ") + ": sleep, steps, resting heart rate and active minutes" : "Nothing connected yet"],
+    ["Last 7 days", "Energy, fibre and every action logged"],
+    ["Patterns", computeInsights().slice(0,2).map(i => i.head).join(" · ")],
+    ["Action library", `${ACTIONS.length} reviewed actions. The coach can't suggest anything else.`],
+  ];
+  $("#contextList").innerHTML = items.map(([h,t]) => `<div class="insight"><span class="label">${esc(h)}</span><p>${esc(t)}</p></div>`).join("");
+}
+
+/* ---------- Free check: what your family doctor didn't test ---------- */
+// Plain language guide. dir: "lower" = under cut[0] is in range, under cut[1] borderline.
+// "higher" = at or above cut[0] in range, at or above cut[1] borderline. "range" = between cut[0] and cut[1].
+// General adult ranges in Canadian (SI) units, for a demo. Real labs print their own.
+const MK = {
+  tc:      { name:"Total cholesterol", unit:"mmol/L", dir:"lower",  cut:[5.2,6.2],  range:"under 5.2", what:"All the cholesterol in your blood, the helpful and harmful kinds added together." },
+  ldl:     { name:"LDL cholesterol",   unit:"mmol/L", dir:"lower",  cut:[3.0,3.5],  range:"under 3.5, ideally under 3.0", what:"The main \"bad\" cholesterol. It measures the cholesterol inside LDL particles, not how many particles there are." },
+  hdl:     { name:"HDL cholesterol",   unit:"mmol/L", dir:"higher", cut:[1.3,1.0],  range:"above 1.3", what:"The \"good\" cholesterol that carries extra cholesterol back to your liver." },
+  tg:      { name:"Triglycerides",     unit:"mmol/L", dir:"lower",  cut:[1.7,2.3],  range:"under 1.7", what:"Fat in your blood. It rises with sugar, refined carbs and alcohol." },
+  nonhdl:  { name:"Non-HDL cholesterol", unit:"mmol/L", dir:"lower", cut:[4.2,4.9], range:"under 4.2", what:"Total minus HDL: all the harmful kinds together. Closer to ApoB than LDL is." },
+  glucose: { name:"Fasting glucose",   unit:"mmol/L", dir:"range",  cut:[3.6,6.0],  range:"3.6 to 6.0", what:"Your blood sugar after not eating overnight. A snapshot of one morning." },
+  a1c:     { name:"HbA1c",             unit:"%",      dir:"lower",  cut:[6.0,6.5],  range:"under 6.0", what:"Your average blood sugar over the past 2 to 3 months." },
+  tsh:     { name:"TSH (thyroid)",     unit:"mIU/L",  dir:"range",  cut:[0.32,5.04],range:"0.32 to 5.04", what:"A signal from your brain telling your thyroid how hard to work. Checks for an under or overactive thyroid." },
+  egfr:    { name:"eGFR (kidneys)",    unit:"mL/min", dir:"higher", cut:[90,60],    range:"above 90", what:"How well your kidneys filter your blood. It drifts down a little with age." },
+  creat:   { name:"Creatinine",        unit:"µmol/L", dir:"range",  cut:[45,110],   range:"about 45 to 110", what:"A waste product from your muscles. Your kidneys clear it, so it's another kidney check." },
+  alt:     { name:"ALT (liver)",       unit:"U/L",    dir:"lower",  cut:[40,80],    range:"under 40", what:"A liver enzyme. Higher levels can mean the liver is under strain, often from fat build up or alcohol." },
+  hgb:     { name:"Hemoglobin",        unit:"g/L",    dir:"range",  cut:[120,170],  range:"about 120 to 170", what:"The protein in red blood cells that carries oxygen. Low means anemia." },
+  ferritin:{ name:"Ferritin",          unit:"µg/L",   dir:"range",  cut:[30,300],   range:"30 to 300", what:"Your iron stores. Low ferritin is a common, hidden cause of tiredness." },
+  b12:     { name:"Vitamin B12",       unit:"pmol/L", dir:"higher", cut:[220,150],  range:"above 220", what:"A vitamin your nerves and red blood cells need." },
+  // The markers a yearly checkup usually skips
+  apob:    { name:"ApoB",              unit:"g/L",    dir:"lower",  cut:[0.9,1.2],  range:"under 0.90", what:"Counts the harmful cholesterol carrying particles. Each one carries exactly one ApoB." },
+  lpa:     { name:"Lp(a)",             unit:"nmol/L", dir:"lower",  cut:[75,125],   range:"under 75", what:"An inherited, extra sticky cholesterol particle. Your genes set it, so it's a once in a lifetime test." },
+  insulin: { name:"Fasting insulin",   unit:"pmol/L", dir:"lower",  cut:[60,100],   range:"under 60", what:"How much insulin your body needs to keep your sugar steady overnight." },
+  crp:     { name:"hs-CRP",            unit:"mg/L",   dir:"lower",  cut:[1,3],      range:"under 1.0", what:"A sensitive measure of low level inflammation in your body." },
+  vitd:    { name:"Vitamin D",         unit:"nmol/L", dir:"higher", cut:[75,50],    range:"75 to 250", what:"The sunshine vitamin. Many Canadians run low in winter." },
+  omega3:  { name:"Omega-3 index",     unit:"%",      dir:"higher", cut:[8,4],      range:"above 8%", what:"The share of omega-3 fats, mostly from fish, in your red blood cells." },
+};
+const UNIT_OK = { "mmol/l":1, "%":1, "miu/l":1, "mu/l":1, "uiu/ml":1, "ml/min":1, "umol/l":1, "u/l":1, "iu/l":1, "g/l":1, "ug/l":1, "ng/ml":1, "pmol/l":1, "nmol/l":1, "mg/l":1 };
+const canonUnit = u => String(u||"").toLowerCase().replace(/\s+/g,"").replace(/[µμ]/g,"u").replace(/\/1\.73.*$/,"");
+const GAP = ["apob","lpa","insulin","crp","vitd","omega3"];
+const GAP_INFO = {
+  apob:    { why:"Two people with the same LDL can have very different numbers of particles. ApoB counts them, and it predicts heart risk better than LDL does.", skip:"It isn't part of the standard cholesterol panel most checkups order. It's usually added only in special cases." },
+  lpa:     { why:"About 1 in 5 people have high Lp(a). It raises heart attack and stroke risk even when the rest of your cholesterol looks fine.", skip:"Canadian heart guidelines suggest testing it once in your life, but it's rarely ordered, and in many provinces you pay for it yourself." },
+  insulin: { why:"Insulin often rises years before blood sugar or HbA1c do, so it can show early insulin resistance while your sugar still looks normal.", skip:"It isn't in routine screening guidelines, so doctors rarely order it without a specific reason." },
+  crp:     { why:"Ongoing, low level inflammation is linked to heart disease. hs-CRP adds to cholesterol when judging heart risk.", skip:"Checkups usually don't include it. The regular CRP test is for infections and isn't sensitive enough." },
+  vitd:    { why:"Low vitamin D is common in Canadian winters and is linked to bone strength, mood and immunity.", skip:"Several provinces, including Ontario, stopped covering routine vitamin D tests for healthy adults." },
+  omega3:  { why:"A higher omega-3 index is linked to lower heart risk, and it shows whether fish or supplements are actually working.", skip:"It's a specialty test, not something a family doctor can order with routine bloodwork." },
+};
+const SAMPLE_REPORT = { source:"sample", lab:"Example lab report", date:"2025-03-14", results:[
+  { key:"tc", value:5.6 }, { key:"ldl", value:3.4 }, { key:"hdl", value:1.4 }, { key:"tg", value:1.5 }, { key:"nonhdl", value:4.2 },
+  { key:"glucose", value:5.4 }, { key:"a1c", value:5.8 }, { key:"tsh", value:2.1 }, { key:"egfr", value:98 }, { key:"hgb", value:131 }, { key:"ferritin", value:41 },
+].map(r => ({ ...r, name:MK[r.key].name, unit:MK[r.key].unit })) };
+
+const CK_STORE = "dailyloop.check.v1";
+let ck = null;
+try { ck = JSON.parse(localStorage.getItem(CK_STORE) || "null"); } catch(e){ ck = null; }
+if (!ck || ck.v !== 1) ck = { v:1, welcomeSeen:false, report:null, ai:"" };
+function saveCk(){ try { localStorage.setItem(CK_STORE, JSON.stringify(ck)); } catch(e){} }
+
+function unitMatches(k, unit){
+  if (!unit) return true;
+  const u = canonUnit(unit), want = canonUnit(MK[k].unit);
+  if (k === "lpa" && u === "mg/dl") return true;
+  if (u === want || u.startsWith(want)) return true;
+  const same = [["miu/l","mu/l","uiu/ml"],["u/l","iu/l"],["ug/l","ng/ml"]];
+  return same.some(g => g.includes(u) && g.includes(want));
+}
+function mstatus(r){
+  const m = MK[r.key]; if (!m || !unitMatches(r.key, r.unit)) return null;
+  const c = (r.key === "lpa" && canonUnit(r.unit) === "mg/dl") ? [30,50] : m.cut, v = r.value;
+  if (m.dir === "lower") return v < c[0] ? "ok" : v < c[1] ? "warn" : "flag";
+  if (m.dir === "higher") return v >= c[0] ? "ok" : v >= c[1] ? "warn" : "flag";
+  return v >= c[0] && v <= c[1] ? "ok" : "warn";
+}
+function rangeText(r){ return (r.key === "lpa" && canonUnit(r.unit) === "mg/dl") ? "under 30 mg/dL" : MK[r.key].range; }
+const CHIP = { ok:`<span class="chip good"><span class="dot"></span>In range</span>`, warn:`<span class="chip warn"><span class="dot"></span>Borderline</span>`, flag:`<span class="chip flag"><span class="dot"></span>Out of range</span>` };
+const listNames = a => a.length <= 1 ? a.join("") : a.slice(0,-1).join(", ") + " and " + a[a.length-1];
+
+function analyse(rep){
+  const rows = rep.results.map(r => ({ ...r, st: MK[r.key] ? mstatus(r) : null }));
+  const have = new Set(rows.filter(r => MK[r.key]).map(r => r.key));
+  const missing = GAP.filter(k => !have.has(k));
+  const by = s => rows.filter(r => r.st === s);
+  const bad = k => rows.some(r => r.key === k && (r.st === "warn" || r.st === "flag"));
+  const SHORT = { ldl:"LDL", tc:"total cholesterol", nonhdl:"non-HDL", tg:"triglycerides" };
+  const lipidsOff = ["ldl","tc","nonhdl","tg"].filter(bad).map(k => SHORT[k]);
+  const sugarOff = ["glucose","a1c"].some(bad), sugarSeen = rows.some(r => r.key === "glucose" || r.key === "a1c");
+  const forYou = {
+    apob: lipidsOff.length ? `Your ${listNames(lipidsOff)} ${lipidsOff.length>1?"are":"is"} borderline. ApoB shows whether that means lots of particles (more risk) or fewer, larger ones.` : "",
+    lpa: lipidsOff.length ? "With borderline cholesterol, a high Lp(a) would change how seriously to take it." : "",
+    insulin: sugarOff ? "Your blood sugar is borderline. Fasting insulin shows how hard your body is working to hold it there." : sugarSeen ? "Your blood sugar looks normal. Fasting insulin can show if your body is working harder than it should to keep it there." : "",
+    crp: lipidsOff.length ? "Inflammation and borderline cholesterol add up. hs-CRP shows the inflammation part." : "",
+    vitd: "", omega3: "",
+  };
+  const known = rows.filter(r => r.st);
+  return { rows, missing, ok:by("ok"), warn:by("warn"), flag:by("flag"), known, forYou };
+}
+function coverageGrade(found){ return ["D","C","C+","B","B+","A−","A"][found]; }
+function summaryText(a){
+  const n = a.known.length; let s = n ? `${a.ok.length} of ${n} results are in range.` : "We couldn't match these results to our guide.";
+  if (a.flag.length) s += ` ${listNames(a.flag.map(r=>r.name))} ${a.flag.length>1?"are":"is"} out of range.`;
+  if (a.warn.length) s += ` ${listNames(a.warn.map(r=>r.name))} ${a.warn.length>1?"are":"is"} borderline.`;
+  s += a.missing.length ? ` But ${a.missing.length} key prevention marker${a.missing.length>1?"s were":" was"} never checked.` : " And your report covers every marker we look for.";
+  return s;
+}
+function fmtVal(v){ return Math.abs(v) >= 100 ? String(Math.round(v)) : String(+v.toFixed(2)); }
+function fmtRepDate(d){ const t = d ? new Date(d + "T12:00:00") : null; return t && !isNaN(t) ? t.toLocaleDateString("en-CA",{ month:"short", day:"numeric", year:"numeric" }) : ""; }
+
+function ckView(v){ $("#ckStart").hidden = v !== "start"; $("#ckBusy").hidden = v !== "busy"; $("#ckResult").hidden = v !== "result"; }
+function ckErr(msg){ const e = $("#ckError"); e.textContent = msg || ""; e.hidden = !msg; }
+
+function renderCheck(){
+  $("#ckLookFor").innerHTML = GAP.map(k => `<span class="target"><span class="sw rust"></span><b>${esc(MK[k].name)}</b></span>`).join("");
+  if (!ck.report) { ckView("start"); return; }
+  const rep = ck.report, a = analyse(rep), found = GAP.length - a.missing.length;
+  const src = rep.source === "sample" ? "Sample report" : (rep.lab || "Your report");
+  const when = fmtRepDate(rep.date);
+  const known = a.rows.filter(r => MK[r.key]), other = a.rows.filter(r => !MK[r.key]);
+  const row = r => {
+    const m = MK[r.key];
+    const chip = r.st ? CHIP[r.st] : `<span class="chip plain">${m ? "Check the unit" : "Not in our guide"}</span>`;
+    const ex = m ? (r.st ? m.what : `${m.what} We expected ${m.unit}, so compare it with your lab's range.`) : "Ask your doctor what this one means for you.";
+    return `<details class="mrow-d"${r.st === "ok" ? "" : " open"}><summary class="mrow">
+      <span class="nm">${esc(m ? m.name : r.name)}</span>
+      <span class="val"><strong>${esc(fmtVal(r.value))}</strong> <span class="muted">${esc(r.unit || (m ? m.unit : ""))}</span></span>
+      <span class="rg">${m && r.st ? "Range " + esc(rangeText(r)) : "&nbsp;"}</span>${chip}</summary>
+      <p class="ex">${esc(ex)}</p></details>`;
+  };
+  const missCard = k => { const m = MK[k], g = GAP_INFO[k], fy = a.forYou[k];
+    return `<article class="miss">
+      <div class="top"><h3>${esc(m.name)}</h3><span class="chip"><span class="dot"></span>Never checked</span></div>
+      <p>${esc(m.what)}</p>
+      <p class="small muted">${esc(g.why)}</p>
+      ${fy ? `<p class="foryou"><b>For you:</b> ${esc(fy)}</p>` : ""}
+      <details><summary>Why wasn't it tested?</summary><p>${esc(g.skip)}</p></details>
+    </article>`; };
+  $("#ckResult").innerHTML = `
+    <div class="head">
+      <span class="label">${esc(src)}${when ? " · " + esc(when) : ""}</span>
+      <h1>Your results, explained</h1>
+      <p class="sub">${esc(summaryText(a))}</p>
+    </div>
+    <div class="card oxblood cov">
+      <div class="grade" aria-label="Coverage grade ${coverageGrade(found)}">${coverageGrade(found)}</div>
+      <div class="tt"><span class="label">Prevention coverage</span>
+        <div class="v">${found} of ${GAP.length} key markers checked</div>
+        <p class="small muted">${known.length ? "The basics were covered. The markers that spot risk early were not." : "We couldn't find the usual tests either."}</p></div>
+    </div>
+    <section class="block">
+      <div class="tt">
+        <div class="sec-head"><h2>What you have</h2><span class="count">${a.rows.length} result${a.rows.length===1?"":"s"}</span></div>
+        <p class="small muted">Tap any result to see what it means.</p>
+      </div>
+      <div class="card"><div class="mrows">${a.rows.length ? known.concat(other).map(row).join("") : `<p class="muted">No results were read from this report.</p>`}</div></div>
+    </section>
+    <div class="card lime" id="ckAICard">
+      <div class="tt">
+        <h2>Explain it like a friend</h2>
+        <p class="ai-out" id="ckAIOut">${esc(ck.ai || "A short summary in plain words, written from your numbers.")}</p>
+      </div>
+      <div class="row"><button class="pill sm" type="button" id="ckAIBtn">${ck.ai ? "Explain again" : "Explain my results"}</button><button class="chipbtn" type="button" id="ckAIStop" hidden>Stop</button></div>
+      <p class="small" id="ckAINote"></p>
+    </div>
+    ${a.missing.length ? `
+    <section class="block">
+      <div class="sec-head"><h2>Never checked</h2><span class="count">${a.missing.length} missing</span></div>
+      <div class="list">${a.missing.map(missCard).join("")}</div>
+    </section>
+    <div class="card olive">
+      <div class="tt">
+        <h2>Test what's missing</h2>
+        <p class="muted">A first niadaily panel checks ${a.missing.length === 1 ? "it" : "all " + a.missing.length}, and a nurse practitioner goes over the results with you.</p>
+      </div>
+      <div class="block">
+        <button class="pill cream block" type="button" id="ckJoin">Test the missing markers</button>
+        <div class="row"><button class="chipbtn" type="button" id="ckSave" hidden>Save my list</button><button class="chipbtn" type="button" id="ckCopy">Copy my list</button></div>
+        <p class="small muted" id="ckSaveNote" aria-live="polite"></p>
+        <textarea id="ckListText" class="sr" readonly tabindex="-1" aria-hidden="true"></textarea>
+      </div>
+    </div>` : `
+    <article class="miss good-news"><div class="tt"><h3>Nothing missing</h3><p>Your report already covers all ${GAP.length} markers we look for. niadaily would help you track them every day.</p></div>
+      <div><button class="pill sm" type="button" id="ckJoin">See what members get</button></div></article>`}
+    <button class="linkbtn" type="button" id="ckAgain">Check another report</button>
+    <p class="guard">Not medical advice. These are general adult ranges and can differ from your lab's. Talk to your doctor about anything out of range.</p>`;
+  const lt = $("#ckListText"); if (lt) lt.value = listText(a);
+  const sv = $("#ckSave"); if (sv) sv.hidden = !downloads;
+  ckView("result");
+  updateCheckAI();
+}
+function listText(a){
+  const rep = ck.report;
+  return `What my family doctor didn't test\n${rep.source === "sample" ? "Sample report" : (rep.lab || "My report")}${rep.date ? ", " + fmtRepDate(rep.date) : ""}\n\nNever checked:\n` +
+    a.missing.map(k => `- ${MK[k].name}: ${MK[k].what}`).join("\n") +
+    `\n\nWorth asking about at your next visit, or testing with a membership panel.\n\nniadaily, a concept by Leo Zhao. Not medical advice.\n`;
+}
+
+// Reading an uploaded report with Claude
+let imgLimits = null, downloads = null, ckCtl = null;
+const EXTRACT = `This is a photo or scan of a Canadian blood test report (for example LifeLabs, Dynacare, or a family doctor's printout).
+Read every test result you can clearly see. Reply with only one JSON object in this shape:
+{"isLabReport": true, "date": "YYYY-MM-DD or null", "lab": "lab name or null", "results": [{"key": "ldl", "name": "LDL Cholesterol", "value": 3.4, "unit": "mmol/L"}]}
+Use one of these keys when the test matches, otherwise "other":
+tc total cholesterol, ldl, hdl, tg triglycerides, nonhdl non-HDL cholesterol, glucose fasting glucose, a1c hemoglobin A1c, tsh, egfr, creat creatinine, alt, hgb hemoglobin, ferritin, b12, apob apolipoprotein B, lpa lipoprotein(a), insulin fasting insulin, crp ONLY high sensitivity CRP (plain CRP is "other"), vitd 25-hydroxy vitamin D, omega3 omega-3 index.
+"value" must be a number. For results like "<0.5" use 0.5. Report units exactly as printed. Use the collection date if shown.
+If the image is not a blood test report, reply {"isLabReport": false, "results": []}.
+Never guess a value you cannot read. Never include the patient's name, health card number, address or doctor's name.`;
+
+function normalizeReport(data){
+  const list = Array.isArray(data && data.results) ? data.results : [];
+  const seen = new Set(), out = [];
+  for (const r of list){
+    if (!r || typeof r !== "object") continue;
+    const v = typeof r.value === "number" ? r.value : parseFloat(String(r.value ?? "").replace(/[<>,≤≥\s]/g,""));
+    if (!isFinite(v)) continue;
+    let k = String(r.key || "other").toLowerCase(); if (!MK[k]) k = "other";
+    if (k !== "other") { if (seen.has(k)) continue; seen.add(k); }
+    out.push({ key:k, name:String(r.name || (MK[k] ? MK[k].name : "Result")).slice(0,60), value:v, unit:String(r.unit || "").slice(0,24) });
+    if (out.length >= 40) break;
+  }
+  const d = data && typeof data.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(data.date) ? data.date : null;
+  return { isLab: !(data && data.isLabReport === false), report:{ source:"upload", lab: data && data.lab ? String(data.lab).slice(0,40) : null, date:d, results:out } };
+}
+function loadScript(src){ return new Promise((res, rej) => { const s = document.createElement("script"); s.src = src; s.onload = res; s.onerror = () => rej(new Error("load")); document.head.append(s); }); }
+async function pdfToImages(file, max){
+  const base = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/";
+  if (!window.pdfjsLib) { await loadScript(base + "pdf.min.js"); await loadScript(base + "pdf.worker.min.js"); }
+  window.pdfjsLib.GlobalWorkerOptions.workerSrc = base + "pdf.worker.min.js";
+  const pdf = await window.pdfjsLib.getDocument({ data:new Uint8Array(await file.arrayBuffer()), isEvalSupported:false }).promise;
+  const out = [];
+  for (let i = 1; i <= Math.min(pdf.numPages, max); i++){
+    const page = await pdf.getPage(i);
+    const scale = Math.min(2.5, 1600 / page.getViewport({ scale:1 }).width);
+    const vp = page.getViewport({ scale });
+    const c = document.createElement("canvas"); c.width = Math.ceil(vp.width); c.height = Math.ceil(vp.height);
+    const ctx = c.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0,0,c.width,c.height);
+    await page.render({ canvasContext:ctx, viewport:vp }).promise;
+    out.push(await new Promise(r => c.toBlob(r, "image/png")));
+  }
+  return out.filter(Boolean);
+}
+$("#ckFile").addEventListener("change", async e => {
+  const file = e.target.files && e.target.files[0]; e.target.value = "";
+  if (!file) return;
+  ckErr("");
+  if (!sample || !imgLimits) { ckErr("Reading a photo works when this link is opened inside Claude. Try the sample report to see how it works."); return; }
+  const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name);
+  if (!isPdf && !imgLimits.mediaTypes.includes(file.type)) { ckErr("That file type can't be read. Use a JPG or PNG photo, or a PDF."); return; }
+  if (!isPdf && file.size > imgLimits.maxInputBytes) { ckErr("That photo is too large. Try a smaller one or a screenshot."); return; }
+  ckView("busy"); $("#ckBusyHead").textContent = "Reading your report"; $("#ckBusyText").textContent = isPdf ? "Opening the PDF..." : "This usually takes 20 to 40 seconds.";
+  ckCtl = new AbortController(); const signal = ckCtl.signal;
+  try {
+    const images = isPdf ? await pdfToImages(file, Math.min(3, imgLimits.maxCount)) : [file];
+    if (signal.aborted) return;
+    if (!images.length) throw { code:"pdf_failed" };
+    $("#ckBusyText").textContent = "This usually takes 20 to 40 seconds.";
+    const data = await sample.json(EXTRACT, { images, signal, cache:false });
+    const n = normalizeReport(data);
+    if (!n.isLab || !n.report.results.length) { ckView("start"); ckErr(n.isLab ? "We couldn't read any results. Try a sharper, well lit photo with the numbers flat and in focus." : "That doesn't look like a blood test report. Try a photo of the results page."); return; }
+    ck.report = n.report; ck.ai = ""; saveCk(); renderCheck(); window.scrollTo({ top:0 });
+  } catch(err) {
+    ckView("start");
+    if (err && err.code === "cancelled") return;
+    ckErr(err && err.code === "invalid_json" ? "We couldn't read that report clearly. Try a sharper photo."
+      : err && err.code === "image_rejected" ? "That image couldn't be opened. Try a JPG or PNG photo."
+      : err && (err.code === "pdf_failed" || err.message === "load") ? "That PDF couldn't be opened. Try a screenshot of the results page instead."
+      : err && err.code ? sampleMessage(err.code) : "That PDF couldn't be opened. Try a screenshot of the results page instead.");
+    if (err && ["not_granted","sampling_disabled","images_unavailable"].includes(err.code)) imgLimits = null;
+  } finally { ckCtl = null; }
+});
+$("#ckStop").addEventListener("click", () => { if (ckCtl) ckCtl.abort(); ckView("start"); });
+$("#ckSample").addEventListener("click", () => {
+  ckErr(""); ckView("busy"); $("#ckBusyHead").textContent = "Reading the sample report"; $("#ckBusyText").textContent = "Matching 11 results to our guide...";
+  setTimeout(() => { ck.report = JSON.parse(JSON.stringify(SAMPLE_REPORT)); ck.ai = ""; saveCk(); renderCheck(); window.scrollTo({ top:0 }); }, 900);
+});
+
+// Plain language summary from Claude, on top of the built in explanations
+let ckAICtl = null;
+function updateCheckAI(){
+  const card = $("#ckAICard"); if (!card) return;
+  card.hidden = !sample;
+}
+$("#ckResult").addEventListener("click", async e => {
+  const t = e.target.closest("button"); if (!t) return;
+  if (t.id === "ckAgain") { ck.report = null; ck.ai = ""; saveCk(); ckErr(""); renderCheck(); window.scrollTo({ top:0 }); }
+  else if (t.id === "ckJoin") openJoin();
+  else if (t.id === "ckCopy") copyList();
+  else if (t.id === "ckSave") saveList();
+  else if (t.id === "ckAIStop") { if (ckAICtl) ckAICtl.abort(); }
+  else if (t.id === "ckAIBtn") explainCheck();
+});
+async function explainCheck(){
+  if (!sample || ckAICtl) return;
+  const a = analyse(ck.report), out = $("#ckAIOut"), note = $("#ckAINote");
+  const lines = a.rows.map(r => `${MK[r.key] ? MK[r.key].name : r.name}: ${r.value} ${r.unit}${r.st ? ` (${r.st === "ok" ? "in range" : r.st === "warn" ? "borderline" : "out of range"}; range ${rangeText(r)})` : ""}`).join("\n");
+  const miss = a.missing.map(k => `${MK[k].name}: ${GAP_INFO[k].why}`).join("\n");
+  const prompt = `You explain blood test results to an ordinary adult in Canada, inside a concept demo of a preventive health app. They got these results from their family doctor or a lab.
+Rules: plain words a 12 year old could follow; warm and calm, never alarming; no diagnosis and no medication advice; no headings, lists or markdown symbols; under 140 words in 2 short paragraphs.
+Paragraph 1: the overall picture, then the one or two results most worth attention and what they mean in everyday terms.
+Paragraph 2: why the markers that were never tested would add to the picture for this person specifically, naming at most three. End by suggesting they talk with their doctor about anything out of range.
+
+RESULTS:
+${lines}
+
+NEVER TESTED:
+${miss || "None. Everything we look for was tested."}`;
+  ckAICtl = new AbortController();
+  $("#ckAIBtn").disabled = true; $("#ckAIStop").hidden = false; note.textContent = ""; out.textContent = "Thinking...";
+  try {
+    const { text } = await sample(prompt, { modelTier:"quick", signal:ckAICtl.signal, onText: ({text}) => { out.textContent = text; } });
+    out.textContent = text; ck.ai = text; saveCk();
+  } catch(err) {
+    out.textContent = err.text || ck.ai || "A short summary in plain words, written from your numbers.";
+    if (err.code !== "cancelled") note.textContent = sampleMessage(err.code);
+    if (["not_granted","sampling_disabled","not_declared","capability_disabled","capability_removed"].includes(err.code)) aiUnavailable();
+  } finally {
+    ckAICtl = null;
+    const b = $("#ckAIBtn"); if (b) { b.disabled = false; b.textContent = ck.ai ? "Explain again" : "Explain my results"; }
+    const s = $("#ckAIStop"); if (s) s.hidden = true;
+  }
+}
+function openJoin(){
+  const a = analyse(ck.report), keys = a.missing.length ? a.missing : GAP;
+  $("#joinN").textContent = keys.length;
+  $("#joinHead").firstChild.textContent = a.missing.length ? "Your first panel covers " + (keys.length === 1 ? "this " : "these ") : "Your panel tracks all ";
+  $("#joinList").innerHTML = keys.map(k => `<li><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span><span><b>${esc(MK[k].name)}</b><small>${esc(MK[k].what)}</small></span></li>`).join("");
+  openSheet("#sheetJoin");
+}
+$("#joinDemo").addEventListener("click", () => { closeSheet($("#sheetJoin")); go("home"); });
+async function copyList(){
+  const txt = $("#ckListText").value, note = $("#ckSaveNote");
+  try { await navigator.clipboard.writeText(txt); note.textContent = "Copied. Paste it into a note or a message to your doctor."; }
+  catch(e) { const t = $("#ckListText"); t.classList.remove("sr"); t.removeAttribute("aria-hidden"); t.style.cssText = "width:100%;min-height:160px;border-radius:12px;padding:12px;font:inherit;font-size:.86rem"; t.select(); note.textContent = "Select the text below and copy it."; }
+}
+async function saveList(){
+  if (!downloads) return;
+  const note = $("#ckSaveNote");
+  try { await downloads.save({ filename:"what-my-doctor-didnt-test.txt", data:$("#ckListText").value }); note.textContent = "Saved."; }
+  catch(e) { note.textContent = e && e.code === "cancelled" ? "" : "Couldn't save the file here. Use Copy instead."; }
+}
+
+/* ---------- Welcome ---------- */
+function showWelcome(on){
+  $("#welcome").hidden = !on;
+  document.querySelector(".app").inert = on; document.querySelector(".tabbar").inert = on;
+  document.documentElement.style.overflow = on ? "hidden" : "";
+  if (on) { $("#welcome").scrollTop = 0; $("#wStart").focus({ preventScroll:true }); }
+}
+function leaveWelcome(tab){ ck.welcomeSeen = true; saveCk(); showWelcome(false); go(tab); }
+$("#wStart").addEventListener("click", () => leaveWelcome("home"));
+$("#wCheck").addEventListener("click", () => leaveWelcome("check"));
+
+/* ---------- Bottom tab navigation ---------- */
+const TABS = ["home","progress","check","results","coach","me"];
+function showTab(id){
+  TABS.forEach(t => {
+    $("#scr-"+t).hidden = t !== id;
+    document.querySelectorAll(`.tabbar [data-tab="${t}"], .me-btn[data-tab="${t}"]`).forEach(b => {
+      if (t === id) b.setAttribute("aria-current","page"); else b.removeAttribute("aria-current");
+    });
+  });
+  if (id === "coach") $("#coachDot").hidden = true;
+  if (location.hash.slice(1) !== id && history.replaceState) history.replaceState(null, "", "#"+id);
+}
+function go(id){ showTab(id); window.scrollTo({ top:0 }); }
+document.querySelectorAll("[data-tab]").forEach(b => b.addEventListener("click", () => go(b.dataset.tab)));
+window.addEventListener("hashchange", () => { const h = location.hash.slice(1); if (TABS.includes(h)) showTab(h); });
+
+$("#resetDemo").addEventListener("click", () => {
+  state = seedState(); save(); expanded.clear(); buildPlan();
+  ck = { v:1, welcomeSeen:false, report:null, ai:"" }; saveCk(); ckErr("");
+  aiNote = null; renderAll();
+  go("home"); showWelcome(true);
+});
+
+function renderAll(){ renderHeader(); renderActions(); renderLesson(); renderLog(); renderProgress(); renderResults(); renderChat(); renderContext(); renderCheck(); renderMetrics(); renderDevices(); $("#tipText").textContent = aiNote || localNote(); }
+buildPlan(); renderAll();
+const h0 = location.hash.slice(1);
+showTab(TABS.includes(h0) ? h0 : "home");
+if (!TABS.includes(h0) && !ck.welcomeSeen) showWelcome(true);
+
+// Light up AI when Claude is available
+(async () => {
+  try { sample = window.claude && window.claude.use ? await window.claude.use("sample") : null; } catch(e) { sample = null; }
+  if (!sample) { aiUnavailable(); return; }
+  $("#tipBtn").disabled = false; $("#sendBtn").disabled = false; setGuard("");
+  renderChat();
+  try { const lim = await sample.limits(); imgLimits = lim && lim.images ? lim.images : null; } catch(e) { imgLimits = null; }
+  if (!imgLimits) $("#ckUpNote").textContent = "Reading photos isn't available in this view. The sample report shows how it works.";
+  try { downloads = await window.claude.use("downloads"); } catch(e) { downloads = null; }
+  if (ck.report) renderCheck();
+})();
+})();
+</script>
+</body></html>
